@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 kotlin {
@@ -45,6 +46,12 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            implementation("io.ktor:ktor-client-core:2.3.11")
+            implementation("io.ktor:ktor-client-cio:2.3.11")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
+            implementation("media.kamel:kamel-image:0.9.4")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

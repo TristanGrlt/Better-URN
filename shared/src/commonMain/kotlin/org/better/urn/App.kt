@@ -1,12 +1,17 @@
 package org.better.urn
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.better.urn.data.Course
+import org.better.urn.data.MoodleClient
+import org.better.urn.data.MoodleUser
+import org.better.urn.ui.HomeScreen
+import org.better.urn.ui.LoginScreen
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF00497D),
@@ -44,27 +49,51 @@ fun App() {
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            var clickCount by remember { mutableStateOf(0) }
+            val coroutineScope = rememberCoroutineScope()
+            
+            // États de l'application
+            var isLogged by remember { mutableStateOf(false) }
+            var isLoading by remember { mutableStateOf(false) }
+            var errorMessage by remember { mutableStateOf<String?>(null) }
+            
+            // Données
+            var user by remember { mutableStateOf<MoodleUser?>(null) }
+            var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
 
-            Column(modifier = Modifier.padding(16.dp)) {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Student Dashboard",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Nombre de clics : $clickCount",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { clickCount++ }) {
-                            Text("Ajouter une interaction")
+            if (!isLogged) {
+                LoginScreen(
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    onLogin = { url, token ->
+                        coroutineScope.launch {
+                            isLoading = true
+                            errorMessage = null
+                            try {
+                                val client = MoodleClient(url, token)
+                                val fetchedUser = client.getUserProfile()
+                                val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
+                                
+                                user = fetchedUser
+                                courses = fetchedCourses
+                                isLogged = true
+                            } catch (e: Exception) {
+                                errorMessage = "Erreur de connexion, vérifiez l'URL et le token."
+                                e.printStackTrace()
+                            } finally {
+                                isLoading = false
+                            }
                         }
                     }
-                }
+                )
+            } else {
+                HomeScreen(
+                    userName = user?.fullname ?: "Étudiant",
+                    courses = courses,
+                    onCourseClick = { courseId -> 
+                        println("Clic sur le cours $courseId") 
+                        // TODO: Navigation vers CourseDetailScreen
+                    }
+                )
             }
         }
     }
