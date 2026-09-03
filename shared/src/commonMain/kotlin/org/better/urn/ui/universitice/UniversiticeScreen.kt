@@ -1,19 +1,23 @@
 package org.better.urn.ui.universitice
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import org.better.urn.data.UserPreferences
 import org.better.urn.ui.components.BetterUrnTopBar
@@ -94,40 +98,74 @@ fun UniversiticeScreen(
                         ) {
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            OutlinedTextField(
-                                value = state.searchQuery,
-                                onValueChange = onSearchQueryChange,
+                            var isFocused by remember { mutableStateOf(false) }
+
+                            Surface(
                                 modifier = Modifier
+                                    .widthIn(max = 440.dp)
                                     .fillMaxWidth()
-                                    .padding(bottom = 16.dp),
-                                placeholder = { Text("Rechercher un cours...") },
-                                leadingIcon = {
+                                    .height(40.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                shape = CircleShape,
+                                color = if (isFocused) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 12.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Search,
                                         contentDescription = "Rechercher",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        modifier = Modifier.size(18.dp),
+                                        tint = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                },
-                                trailingIcon = {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        if (state.searchQuery.isEmpty()) {
+                                            Text(
+                                                text = "Rechercher un cours...",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                        BasicTextField(
+                                            value = state.searchQuery,
+                                            onValueChange = onSearchQueryChange,
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            ),
+                                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .onFocusChanged { isFocused = it.isFocused }
+                                        )
+                                    }
                                     if (state.searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { onSearchQueryChange("") }) {
+                                        IconButton(
+                                            onClick = { onSearchQueryChange("") },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Clear,
-                                                contentDescription = "Effacer la recherche"
+                                                contentDescription = "Effacer la recherche",
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
-                                },
-                                singleLine = true,
-                                shape = CircleShape,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                )
-                            )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             if (filteredCourses.isEmpty() && state.courses.isNotEmpty()) {
                                 Box(
