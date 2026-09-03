@@ -67,7 +67,8 @@ fun App() {
                             state = state,
                             onLogin = { url, token -> universiticeViewModel.login(url, token) },
                             onRefresh = { universiticeViewModel.refresh() },
-                            onCourseClick = { courseId -> println("Ouverture du cours $courseId") }
+                            onCourseClick = { courseId -> println("Ouverture du cours $courseId") },
+                            onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) }
                         )
                     }
                     AppScreen.IZLY -> {

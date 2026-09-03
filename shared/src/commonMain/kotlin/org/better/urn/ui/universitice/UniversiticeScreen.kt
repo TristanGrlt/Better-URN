@@ -4,6 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -20,7 +25,8 @@ fun UniversiticeScreen(
     state: UniversiticeUiState,
     onLogin: (String, String) -> Unit,
     onRefresh: () -> Unit,
-    onCourseClick: (Int) -> Unit
+    onCourseClick: (Int) -> Unit,
+    onSearchQueryChange: (String) -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
@@ -52,7 +58,7 @@ fun UniversiticeScreen(
                         modifier = Modifier.size(64.dp)
                     )
                 } else {
-                    val courses = state.courses
+                    val filteredCourses = state.filteredCourses
                     val token = UserPreferences().moodleToken
 
                     PullToRefreshBox(
@@ -69,19 +75,86 @@ fun UniversiticeScreen(
                         ) {
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 280.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 16.dp)
-                            ) {
-                                items(courses) { course ->
-                                    CourseCard(
-                                        course = course,
-                                        token = token,
-                                        onClick = { onCourseClick(course.id) }
+                            OutlinedTextField(
+                                value = state.searchQuery,
+                                onValueChange = onSearchQueryChange,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                placeholder = { Text("Rechercher un cours...") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Search,
+                                        contentDescription = "Rechercher",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                },
+                                trailingIcon = {
+                                    if (state.searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { onSearchQueryChange("") }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Clear,
+                                                contentDescription = "Effacer la recherche"
+                                            )
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = CircleShape,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                )
+                            )
+
+                            if (filteredCourses.isEmpty() && state.courses.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center,
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.SearchOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            text = "Aucun cours ne correspond à « ${state.searchQuery} »",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        TextButton(onClick = { onSearchQueryChange("") }) {
+                                            Text("Effacer la recherche")
+                                        }
+                                    }
+                                }
+                            } else {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Adaptive(minSize = 280.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(bottom = 16.dp)
+                                ) {
+                                    items(filteredCourses, key = { it.id }) { course ->
+                                        CourseCard(
+                                            course = course,
+                                            token = token,
+                                            onClick = { onCourseClick(course.id) }
+                                        )
+                                    }
                                 }
                             }
                         }

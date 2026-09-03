@@ -29,9 +29,14 @@ class UniversiticeViewModel {
     fun login(url: String, token: String) {
         _uiState.value = _uiState.value.copy(
             isLogged = true,
-            errorMessage = null
+            errorMessage = null,
+            searchQuery = ""
         )
         fetchData(url, token)
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
     fun refresh() {
