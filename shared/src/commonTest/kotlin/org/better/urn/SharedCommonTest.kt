@@ -39,4 +39,36 @@ class SharedCommonTest {
         assertEquals(1, state5.filteredCourses.size)
         assertEquals("Algorithmique", state5.filteredCourses.first().fullname)
     }
+
+    @Test
+    fun testMoodleErrorDetectionValidJson() {
+        val validJson = """{"userid":123,"fullname":"John Doe","userpictureurl":"https://example.com/pic.jpg"}"""
+        // Should not throw any exception
+        org.better.urn.data.MoodleClient.checkMoodleError(validJson)
+    }
+
+    @Test
+    fun testMoodleErrorDetectionInvalidToken() {
+        val errorJson = """{"exception":"moodle_exception","errorcode":"invalidtoken","message":"Clé d'accès non valide - jeton introuvable"}"""
+        kotlin.test.assertFailsWith<org.better.urn.data.MoodleTokenExpiredException> {
+            org.better.urn.data.MoodleClient.checkMoodleError(errorJson)
+        }
+    }
+
+    @Test
+    fun testMoodleErrorDetectionTokenExpired() {
+        val errorJson = """{"exception":"moodle_exception","errorcode":"tokenexpired","message":"Jeton expiré"}"""
+        kotlin.test.assertFailsWith<org.better.urn.data.MoodleTokenExpiredException> {
+            org.better.urn.data.MoodleClient.checkMoodleError(errorJson)
+        }
+    }
+
+    @Test
+    fun testMoodleErrorDetectionGenericError() {
+        val errorJson = """{"exception":"moodle_exception","errorcode":"invalidcourse","message":"Cours introuvable"}"""
+        val ex = kotlin.test.assertFailsWith<IllegalStateException> {
+            org.better.urn.data.MoodleClient.checkMoodleError(errorJson)
+        }
+        assertEquals("Moodle : Cours introuvable", ex.message)
+    }
 }

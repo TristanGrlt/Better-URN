@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.better.urn.data.Course
 import org.better.urn.data.MoodleClient
+import org.better.urn.data.MoodleTokenExpiredException
 import org.better.urn.data.UserPreferences
 
 class UniversiticeViewModel {
@@ -98,6 +99,30 @@ class UniversiticeViewModel {
         fetchCourseContent(courseId)
     }
 
+    private fun handleTokenExpiration(message: String?) {
+        preferences.moodleToken = ""
+        preferences.cachedUser = null
+        preferences.cachedCourses = emptyList()
+
+        val displayMsg = if (!message.isNullOrBlank()) {
+            "Votre session Moodle a expiré ($message). Veuillez vous reconnecter."
+        } else {
+            "Votre session Moodle a expiré. Veuillez vous reconnecter."
+        }
+
+        _uiState.value = _uiState.value.copy(
+            isLogged = false,
+            isLoading = false,
+            isLoadingCourseContent = false,
+            user = null,
+            courses = emptyList(),
+            selectedCourse = null,
+            courseSections = emptyList(),
+            collapsedSectionIds = emptySet(),
+            errorMessage = displayMsg
+        )
+    }
+
     private fun fetchCourseContent(courseId: Int) {
         val token = preferences.moodleToken
         val url = preferences.moodleUrl
@@ -120,6 +145,8 @@ class UniversiticeViewModel {
                     isLoadingCourseContent = false,
                     errorMessage = null
                 )
+            } catch (e: MoodleTokenExpiredException) {
+                handleTokenExpiration(e.message)
             } catch (e: Exception) {
                 val cachedSections = preferences.getCachedCourseSections(courseId)
                 val displaySections = cachedSections.ifEmpty { _uiState.value.courseSections }
@@ -161,6 +188,8 @@ class UniversiticeViewModel {
                     isLoading = false,
                     errorMessage = null
                 )
+            } catch (e: MoodleTokenExpiredException) {
+                handleTokenExpiration(e.message)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -172,3 +201,4 @@ class UniversiticeViewModel {
         }
     }
 }
+

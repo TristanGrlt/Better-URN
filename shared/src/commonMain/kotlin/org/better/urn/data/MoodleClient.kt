@@ -8,9 +8,12 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
+
+class MoodleTokenExpiredException(message: String) : Exception(message)
 
 class MoodleClient(baseUrl: String, private val token: String) {
     private val cleanBaseUrl = baseUrl.trimEnd('/')
@@ -27,10 +30,43 @@ class MoodleClient(baseUrl: String, private val token: String) {
                 json(json)
             }
         }
+
+        fun checkMoodleError(responseText: String) {
+            val trimmed = responseText.trimStart()
+            if (!trimmed.startsWith("{")) return
+
+            val jsonObject = try {
+                json.parseToJsonElement(trimmed) as? JsonObject
+            } catch (_: Exception) {
+                null
+            } ?: return
+
+            val exception = jsonObject["exception"]?.jsonPrimitive?.contentOrNull
+            val errorCode = jsonObject["errorcode"]?.jsonPrimitive?.contentOrNull
+            val errorMessage = jsonObject["message"]?.jsonPrimitive?.contentOrNull
+                ?: jsonObject["error"]?.jsonPrimitive?.contentOrNull
+
+            if (exception != null || errorCode != null) {
+                val msg = errorMessage ?: "Erreur Moodle inconnue"
+                val codeLower = errorCode?.lowercase().orEmpty()
+                val msgLower = msg.lowercase()
+
+                val isTokenExpired = codeLower in setOf("invalidtoken", "tokenexpired", "accessexception") ||
+                        "token" in codeLower ||
+                        "jeton" in msgLower ||
+                        ("token" in msgLower && ("invalid" in msgLower || "expired" in msgLower || "not found" in msgLower))
+
+                if (isTokenExpired) {
+                    throw MoodleTokenExpiredException(msg)
+                } else {
+                    throw IllegalStateException("Moodle : $msg")
+                }
+            }
+        }
     }
 
     suspend fun getUserProfile(): MoodleUser {
-        return sharedClient.get("$cleanBaseUrl/webservice/rest/server.php") {
+        val responseText: String = sharedClient.get("$cleanBaseUrl/webservice/rest/server.php") {
             headers.append(HttpHeaders.UserAgent, "Mozilla/5.0 (BetterURN)")
             url {
                 parameters.append("wstoken", token)
@@ -38,10 +74,13 @@ class MoodleClient(baseUrl: String, private val token: String) {
                 parameters.append("moodlewsrestformat", "json")
             }
         }.body()
+
+        checkMoodleError(responseText)
+        return json.decodeFromString(responseText)
     }
 
     suspend fun getEnrolledCourses(userId: Int): List<Course> {
-        return sharedClient.get("$cleanBaseUrl/webservice/rest/server.php") {
+        val responseText: String = sharedClient.get("$cleanBaseUrl/webservice/rest/server.php") {
             headers.append(HttpHeaders.UserAgent, "Mozilla/5.0 (BetterURN)")
             url {
                 parameters.append("wstoken", token)
@@ -50,6 +89,9 @@ class MoodleClient(baseUrl: String, private val token: String) {
                 parameters.append("userid", userId.toString())
             }
         }.body()
+
+        checkMoodleError(responseText)
+        return json.decodeFromString(responseText)
     }
 
     suspend fun getCourseContents(courseId: Int): List<CourseSection> {
@@ -63,19 +105,8 @@ class MoodleClient(baseUrl: String, private val token: String) {
             }
         }.body()
 
-        if (responseText.trimStart().startsWith("{")) {
-            val jsonObject = try {
-                json.parseToJsonElement(responseText).jsonObject
-            } catch (_: Exception) {
-                null
-            }
-            val errorMessage = jsonObject?.get("message")?.jsonPrimitive?.contentOrNull
-                ?: jsonObject?.get("exception")?.jsonPrimitive?.contentOrNull
-            if (errorMessage != null) {
-                throw IllegalStateException("Moodle : $errorMessage")
-            }
-        }
-
+        checkMoodleError(responseText)
         return json.decodeFromString(responseText)
     }
 }
+
