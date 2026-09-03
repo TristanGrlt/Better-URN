@@ -1,9 +1,11 @@
 package org.better.urn.ui.components
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,10 +14,28 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BetterUrnTopBar(title: String = "Better URN") {
+fun BetterUrnTopBar(
+    title: String = "Better URN",
+    onRefresh: (() -> Unit)? = null,
+    isRefreshing: Boolean = false,
+    refreshContentDescription: String = "Actualiser",
+    actions: @Composable RowScope.() -> Unit = {}
+) {
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         actions = {
+            if (onRefresh != null) {
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = !isRefreshing
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = refreshContentDescription
+                    )
+                }
+            }
+            actions()
             IconButton(
                 onClick = { /* TODO: Afficher le profil */ },
                 modifier = Modifier.padding(end = 8.dp)

@@ -1,4 +1,4 @@
-package org.better.urn.ui
+package org.better.urn.ui.universitice
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions

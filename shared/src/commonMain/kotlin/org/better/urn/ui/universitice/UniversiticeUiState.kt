@@ -1,4 +1,4 @@
-package org.better.urn.ui
+package org.better.urn.ui.universitice
 
 import org.better.urn.data.Course
 import org.better.urn.data.MoodleUser

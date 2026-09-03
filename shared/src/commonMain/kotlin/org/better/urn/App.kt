@@ -11,10 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import org.better.urn.data.UserPreferences
-import org.better.urn.ui.UniversiticeViewModel
-import org.better.urn.ui.UniversiticeScreen
-import org.better.urn.ui.LoginScreen
+import org.better.urn.ui.universitice.UniversiticeViewModel
+import org.better.urn.ui.universitice.UniversiticeScreen
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.MainLayout
 
@@ -54,8 +52,8 @@ fun App() {
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            val viewModel = remember { UniversiticeViewModel() }
-            val state by viewModel.uiState.collectAsState()
+            val universiticeViewModel = remember { UniversiticeViewModel() }
+            val state by universiticeViewModel.uiState.collectAsState()
             
             var currentScreen by remember { mutableStateOf(AppScreen.UNIVERSITICE) }
 
@@ -67,7 +65,8 @@ fun App() {
                     AppScreen.UNIVERSITICE -> {
                         UniversiticeScreen(
                             state = state,
-                            onLogin = { url, token -> viewModel.login(url, token) },
+                            onLogin = { url, token -> universiticeViewModel.login(url, token) },
+                            onRefresh = { universiticeViewModel.refresh() },
                             onCourseClick = { courseId -> println("Ouverture du cours $courseId") }
                         )
                     }

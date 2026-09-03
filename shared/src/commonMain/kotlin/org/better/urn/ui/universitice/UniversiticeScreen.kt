@@ -1,32 +1,35 @@
-package org.better.urn.ui
+package org.better.urn.ui.universitice
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.better.urn.data.UserPreferences
-import org.better.urn.ui.components.CourseCard
 import org.better.urn.ui.components.BetterUrnTopBar
+import org.better.urn.ui.components.CourseCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UniversiticeScreen(
     state: UniversiticeUiState,
     onLogin: (String, String) -> Unit,
+    onRefresh: () -> Unit,
     onCourseClick: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        BetterUrnTopBar(title = "Universitice")
+        BetterUrnTopBar(
+            title = "Universitice",
+            onRefresh = if (state.isLogged) onRefresh else null,
+            isRefreshing = state.isLoading,
+            refreshContentDescription = "Recharger les cours"
+        )
 
-        if (state.isLoading && state.courses.isNotEmpty()) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
-        
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -44,7 +47,6 @@ fun UniversiticeScreen(
                 }
             } else {
                 if (state.isLoading && state.courses.isEmpty()) {
-                    // Utilisation du composant Material 3 Expressive morphing
                     LoadingIndicator(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(64.dp)
@@ -52,29 +54,35 @@ fun UniversiticeScreen(
                 } else {
                     val courses = state.courses
                     val token = UserPreferences().moodleToken
-                    
-                    Column(
-                        modifier = Modifier
-                            .widthIn(max = 960.dp)
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                            .align(Alignment.TopCenter)
+
+                    PullToRefreshBox(
+                        isRefreshing = state.isLoading,
+                        onRefresh = onRefresh,
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 280.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                        Column(
+                            modifier = Modifier
+                                .widthIn(max = 960.dp)
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                                .align(Alignment.TopCenter)
                         ) {
-                            items(courses) { course ->
-                                CourseCard(
-                                    course = course, 
-                                    token = token, 
-                                    onClick = { onCourseClick(course.id) }
-                                )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 280.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(courses) { course ->
+                                    CourseCard(
+                                        course = course,
+                                        token = token,
+                                        onClick = { onCourseClick(course.id) }
+                                    )
+                                }
                             }
                         }
                     }

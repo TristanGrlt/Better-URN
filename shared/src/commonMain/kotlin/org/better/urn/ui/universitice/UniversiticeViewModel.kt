@@ -1,4 +1,4 @@
-package org.better.urn.ui
+package org.better.urn.ui.universitice
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +12,7 @@ import org.better.urn.data.UserPreferences
 class UniversiticeViewModel {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(Dispatchers.Main)
-    
+
     private val _uiState = MutableStateFlow(
         UniversiticeUiState(isLogged = preferences.moodleToken.isNotBlank())
     )
@@ -34,28 +34,37 @@ class UniversiticeViewModel {
         fetchData(url, token)
     }
 
+    fun refresh() {
+        if (_uiState.value.isLoading) return
+        val currentToken = preferences.moodleToken
+        val currentUrl = preferences.moodleUrl
+        if (currentToken.isNotBlank()) {
+            fetchData(currentUrl, currentToken)
+        }
+    }
+
     private fun fetchData(url: String, token: String) {
         scope.launch {
             val cachedUser = preferences.cachedUser
             val cachedCourses = preferences.cachedCourses
-            
+
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
-                user = cachedUser,
-                courses = cachedCourses,
-                isLogged = true 
+                user = _uiState.value.user ?: cachedUser,
+                courses = _uiState.value.courses.ifEmpty { cachedCourses },
+                isLogged = true
             )
 
             try {
                 val client = MoodleClient(url, token)
                 val fetchedUser = client.getUserProfile()
                 val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
-                
+
                 preferences.moodleUrl = url
                 preferences.moodleToken = token
                 preferences.cachedUser = fetchedUser
                 preferences.cachedCourses = fetchedCourses
-                
+
                 _uiState.value = _uiState.value.copy(
                     user = fetchedUser,
                     courses = fetchedCourses,
