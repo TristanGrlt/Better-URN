@@ -2,6 +2,8 @@ package org.better.urn.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,14 +16,17 @@ fun BetterUrnTopBar(title: String = "Better URN") {
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         actions = {
-            // TODO add real pp
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(36.dp)
-            ) {}
+            IconButton(
+                onClick = { /* TODO: Afficher le profil */ },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AccountCircle,
+                    contentDescription = "Profil utilisateur",
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     )
 }

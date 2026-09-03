@@ -1,8 +1,15 @@
 package org.better.urn.ui.navigation
 
-enum class AppScreen(val title: String, val icon: String) {
-    UNIVERSITICE("Universitice", "🎓"),
-    IZLY("Izly", "💳"),
-    EDT("EDT", "📅"),
-    AUTRE("Autre", "⚙️")
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.ui.graphics.vector.ImageVector
+
+enum class AppScreen(val title: String, val icon: ImageVector) {
+    UNIVERSITICE("Universitice", Icons.Rounded.Book),
+    IZLY("Izly", Icons.Rounded.AccountBalanceWallet),
+    EDT("EDT", Icons.Rounded.DateRange),
+    AUTRE("Autre", Icons.Rounded.MoreHoriz)
 }

@@ -15,7 +15,6 @@ fun MainLayout(
 ) {
     BoxWithConstraints {
         val isDesktop = maxWidth >= 800.dp
-
         if (isDesktop) {
             Row(modifier = Modifier.fillMaxSize()) {
                 NavigationRail(
@@ -27,7 +26,7 @@ fun MainLayout(
                         NavigationRailItem(
                             selected = currentScreen == screen,
                             onClick = { onScreenSelected(screen) },
-                            icon = { Text(screen.icon) },
+                            icon = { Icon(imageVector = screen.icon, contentDescription = screen.title) },
                             label = { Text(screen.title) }
                         )
                     }
@@ -46,7 +45,7 @@ fun MainLayout(
                             NavigationBarItem(
                                 selected = currentScreen == screen,
                                 onClick = { onScreenSelected(screen) },
-                                icon = { Text(screen.icon) },
+                                icon = { Icon(imageVector = screen.icon, contentDescription = screen.title) },
                                 label = { Text(screen.title) }
                             )
                         }

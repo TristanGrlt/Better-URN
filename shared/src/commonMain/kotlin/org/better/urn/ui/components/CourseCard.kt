@@ -1,8 +1,11 @@
 package org.better.urn.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -38,11 +41,21 @@ fun CourseCard(course: Course, token: String, onClick: () -> Unit) {
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(40.dp)
-                ) {}
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center, 
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.School,
+                            contentDescription = "Cours sans image",
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
             }
-
             Spacer(modifier = Modifier.weight(1f))
-
             Text(
                 text = course.fullname,
                 style = MaterialTheme.typography.titleMedium,
