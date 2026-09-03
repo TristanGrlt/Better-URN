@@ -10,7 +10,6 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 class MoodleTokenExpiredException(message: String) : Exception(message)
@@ -46,15 +45,15 @@ class MoodleClient(baseUrl: String, private val token: String) {
             val errorMessage = jsonObject["message"]?.jsonPrimitive?.contentOrNull
                 ?: jsonObject["error"]?.jsonPrimitive?.contentOrNull
 
-            if (exception != null || errorCode != null) {
+            if ((exception != null) || (errorCode != null)) {
                 val msg = errorMessage ?: "Erreur Moodle inconnue"
                 val codeLower = errorCode?.lowercase().orEmpty()
                 val msgLower = msg.lowercase()
 
-                val isTokenExpired = codeLower in setOf("invalidtoken", "tokenexpired", "accessexception") ||
-                        "token" in codeLower ||
-                        "jeton" in msgLower ||
-                        ("token" in msgLower && ("invalid" in msgLower || "expired" in msgLower || "not found" in msgLower))
+                val isTokenExpired = (codeLower in setOf("invalidtoken", "tokenexpired", "accessexception")) ||
+                        ("token" in codeLower) ||
+                        ("jeton" in msgLower) ||
+                        (("token" in msgLower) && (("invalid" in msgLower) || ("expired" in msgLower) || ("not found" in msgLower)))
 
                 if (isTokenExpired) {
                     throw MoodleTokenExpiredException(msg)

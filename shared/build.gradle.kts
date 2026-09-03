@@ -53,6 +53,7 @@ kotlin {
             implementation("io.ktor:ktor-client-cio:2.3.11")
             implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             implementation("media.kamel:kamel-image:0.9.4")
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
         }
