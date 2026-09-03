@@ -22,6 +22,10 @@ fun UniversiticeScreen(
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(title = "Universitice")
+
+        if (state.isLoading && state.courses.isNotEmpty()) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
         
         Box(
             modifier = Modifier.fillMaxSize(),

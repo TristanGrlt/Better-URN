@@ -13,7 +13,6 @@ class UniversiticeViewModel {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(Dispatchers.Main)
     
-    // Initialisation synchrone basée sur la présence du token
     private val _uiState = MutableStateFlow(
         UniversiticeUiState(isLogged = preferences.moodleToken.isNotBlank())
     )
@@ -37,8 +36,16 @@ class UniversiticeViewModel {
 
     private fun fetchData(url: String, token: String) {
         scope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            val cachedUser = preferences.cachedUser
+            val cachedCourses = preferences.cachedCourses
             
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                user = cachedUser,
+                courses = cachedCourses,
+                isLogged = true 
+            )
+
             try {
                 val client = MoodleClient(url, token)
                 val fetchedUser = client.getUserProfile()
@@ -46,20 +53,23 @@ class UniversiticeViewModel {
                 
                 preferences.moodleUrl = url
                 preferences.moodleToken = token
+                preferences.cachedUser = fetchedUser
+                preferences.cachedCourses = fetchedCourses
                 
                 _uiState.value = _uiState.value.copy(
                     user = fetchedUser,
                     courses = fetchedCourses,
                     isLogged = true,
-                    isLoading = false
+                    isLoading = false,
+                    errorMessage = null
                 )
             } catch (e: Exception) {
-                preferences.moodleToken = ""
                 _uiState.value = _uiState.value.copy(
-                    isLogged = false,
                     isLoading = false,
-                    errorMessage = "Session expirée ou erreur réseau. Veuillez vous reconnecter."
+                    isLogged = cachedUser != null && cachedCourses.isNotEmpty(),
+                    errorMessage = if (cachedUser == null) "Erreur réseau. Veuillez vous reconnecter." else "Mode hors-ligne actif. Données potentiellement obsolètes."
                 )
+                if (cachedUser == null) preferences.moodleToken = ""
             }
         }
     }
