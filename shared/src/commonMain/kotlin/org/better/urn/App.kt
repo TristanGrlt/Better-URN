@@ -59,40 +59,32 @@ fun App() {
             
             var currentScreen by remember { mutableStateOf(AppScreen.UNIVERSITICE) }
 
-            if (!state.isLogged) {
-                LoginScreen(
-                    isLoading = state.isLoading,
-                    errorMessage = state.errorMessage,
-                    onLogin = { url, token -> viewModel.login(url, token) }
-                )
-            } else {
-                MainLayout(
-                    currentScreen = currentScreen,
-                    onScreenSelected = { currentScreen = it }
-                ) {
-                    when (currentScreen) {
-                        AppScreen.UNIVERSITICE -> {
-                            UniversiticeScreen(
-                                userName = state.user?.fullname ?: "Étudiant",
-                                courses = state.courses,
-                                token = UserPreferences().moodleToken,
-                                onCourseClick = { courseId -> println("Ouverture du cours $courseId") }
-                            )
-                        }
-                        AppScreen.IZLY -> {
-                            // Plus tard : IzlyScreen()
-                            Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
-                        }
-                        AppScreen.EDT -> {
-                            // Plus tard : EdtScreen()
-                            Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
-                        }
-                        AppScreen.AUTRE -> {
-                            Text("Autres options...", modifier = Modifier.padding(16.dp))
-                        }
+            MainLayout(
+                currentScreen = currentScreen,
+                onScreenSelected = { currentScreen = it }
+            ) {
+                when (currentScreen) {
+                    AppScreen.UNIVERSITICE -> {
+                        UniversiticeScreen(
+                            state = state,
+                            onLogin = { url, token -> viewModel.login(url, token) },
+                            onCourseClick = { courseId -> println("Ouverture du cours $courseId") }
+                        )
+                    }
+                    AppScreen.IZLY -> {
+                        // Plus tard : IzlyScreen()
+                        Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
+                    }
+                    AppScreen.EDT -> {
+                        // Plus tard : EdtScreen()
+                        Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
+                    }
+                    AppScreen.AUTRE -> {
+                        Text("Autres options...", modifier = Modifier.padding(16.dp))
                     }
                 }
             }
+            
         }
     }
 }
