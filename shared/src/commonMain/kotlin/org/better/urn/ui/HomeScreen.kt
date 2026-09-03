@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -14,13 +15,12 @@ import org.better.urn.ui.components.CourseCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(userName: String, courses: List<Course>, onCourseClick: (Int) -> Unit) {
+fun HomeScreen(userName: String, courses: List<Course>, token: String, onCourseClick: (Int) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Better URN", fontWeight = FontWeight.Bold) },
                 actions = {
-                    // Icône de profil provisoire
                     Surface(
                         shape = MaterialTheme.shapes.extraLarge,
                         color = MaterialTheme.colorScheme.primaryContainer,
@@ -30,36 +30,47 @@ fun HomeScreen(userName: String, courses: List<Course>, onCourseClick: (Int) -> 
             )
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp)) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Bonjour, $userName 👋",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Prêt à explorer vos cours aujourd'hui ?",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Unités d'Enseignement (UE)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Grille qui s'adapte automatiquement (min 200dp de large par carte)
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 200.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 960.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
             ) {
-                items(courses) { course ->
-                    CourseCard(course = course, onClick = { onCourseClick(course.id) })
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Bonjour, $userName \uD83D\uDC4B",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Prêt à explorer vos cours aujourd'hui ?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Unités d'Enseignement (UE)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 280.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(courses) { course ->
+                        CourseCard(course = course, token = token, onClick = { onCourseClick(course.id) })
+                    }
                 }
             }
         }

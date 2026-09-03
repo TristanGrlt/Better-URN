@@ -4,62 +4,60 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.better.urn.data.Course
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
-import androidx.compose.ui.layout.ContentScale
+import org.better.urn.data.Course
 
 @Composable
-fun CourseCard(course: Course, onClick: () -> Unit) {
+fun CourseCard(course: Course, token: String, onClick: () -> Unit) {
+    val imageUrl = course.getImageUrl(token)
+
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
         ),
-        modifier = Modifier.fillMaxWidth().aspectRatio(1f) // Carré parfait
+        modifier = Modifier.fillMaxWidth().height(160.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(16.dp).fillMaxSize()
         ) {
-            val imageUrl = course.getImageUrl("4bc20954e6d1659237a16b2d567343fa") // Idéalement passé en paramètre depuis le HomeScreen
-
             if (imageUrl != null) {
                 KamelImage(
                     resource = asyncPainterResource(data = imageUrl),
                     contentDescription = "Image du cours",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(48.dp) // Ou fillMaxWidth() si tu veux une grande image
+                    modifier = Modifier.size(40.dp)
                 )
             } else {
-                // Le CircleAvatar de secours avec l'icône
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    // Icon(...)
-                }
+                    modifier = Modifier.size(40.dp)
+                ) {}
             }
 
-            Column {
-                Text(
-                    text = course.fullname,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = course.shortname,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = course.fullname,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = course.shortname,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

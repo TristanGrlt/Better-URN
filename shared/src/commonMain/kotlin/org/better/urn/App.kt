@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import org.better.urn.data.Course
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.MoodleUser
+import org.better.urn.data.UserPreferences
 import org.better.urn.ui.HomeScreen
 import org.better.urn.ui.LoginScreen
 
@@ -50,15 +51,35 @@ fun App() {
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
             val coroutineScope = rememberCoroutineScope()
-            
-            // États de l'application
-            var isLogged by remember { mutableStateOf(false) }
+            val preferences = remember { UserPreferences() }
+
+            var isLogged by remember { mutableStateOf(preferences.moodleToken.isNotBlank()) }
             var isLoading by remember { mutableStateOf(false) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
-            
-            // Données
+
             var user by remember { mutableStateOf<MoodleUser?>(null) }
             var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
+            val currentToken = preferences.moodleToken
+
+            // Connexion automatique au lancement si le token est enregistré
+            LaunchedEffect(currentToken) {
+                if (currentToken.isNotBlank()) {
+                    isLoading = true
+                    try {
+                        val client = MoodleClient(preferences.moodleUrl, currentToken)
+                        val fetchedUser = client.getUserProfile()
+                        val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
+                        user = fetchedUser
+                        courses = fetchedCourses
+                        isLogged = true
+                    } catch (e: Exception) {
+                        preferences.moodleToken = "" // Réinitialise si le token est invalide
+                        isLogged = false
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            }
 
             if (!isLogged) {
                 LoginScreen(
@@ -73,12 +94,15 @@ fun App() {
                                 val fetchedUser = client.getUserProfile()
                                 val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
                                 
+                                // Sauvegarde locale
+                                preferences.moodleUrl = url
+                                preferences.moodleToken = token
+
                                 user = fetchedUser
                                 courses = fetchedCourses
                                 isLogged = true
                             } catch (e: Exception) {
                                 errorMessage = "Erreur de connexion, vérifiez l'URL et le token."
-                                e.printStackTrace()
                             } finally {
                                 isLoading = false
                             }
@@ -89,9 +113,9 @@ fun App() {
                 HomeScreen(
                     userName = user?.fullname ?: "Étudiant",
                     courses = courses,
-                    onCourseClick = { courseId -> 
-                        println("Clic sur le cours $courseId") 
-                        // TODO: Navigation vers CourseDetailScreen
+                    token = currentToken, // Passage du token pour les images
+                    onCourseClick = { courseId ->
+                        println("Ouverture du cours $courseId")
                     }
                 )
             }

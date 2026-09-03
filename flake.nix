@@ -67,6 +67,7 @@
             echo "Android SDK: $ANDROID_HOME"
             echo "Java: $JAVA_HOME"
             export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt2"
+            export _JAVA_AWT_WM_NONREPARENTING=1
           '';
         };
       }
