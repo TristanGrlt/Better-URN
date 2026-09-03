@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     isLoading: Boolean,
@@ -40,7 +41,6 @@ fun LoginScreen(
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         OutlinedTextField(
             value = url,
             onValueChange = { url = it },
@@ -49,7 +49,6 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
         )
         Spacer(modifier = Modifier.height(16.dp))
-
         OutlinedTextField(
             value = token,
             onValueChange = { token = it },
@@ -64,25 +63,30 @@ fun LoginScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp)
         )
-
+        
         Spacer(modifier = Modifier.height(24.dp))
-
+        
         if (errorMessage != null) {
             Text(
                 text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-
+        
         Button(
             onClick = { onLogin(url, token) },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             enabled = !isLoading && url.isNotBlank() && token.isNotBlank()
         ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                // Utilisation du composant Material 3 Expressive morphing
+                LoadingIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
             } else {
                 Text("Se connecter")
             }

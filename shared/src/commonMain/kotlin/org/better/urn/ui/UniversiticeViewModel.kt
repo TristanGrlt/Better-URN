@@ -12,23 +12,32 @@ import org.better.urn.data.UserPreferences
 class UniversiticeViewModel {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(Dispatchers.Main)
-    private val _uiState = MutableStateFlow(UniversiticeUiState())
+    
+    // Initialisation synchrone basée sur la présence du token
+    private val _uiState = MutableStateFlow(
+        UniversiticeUiState(isLogged = preferences.moodleToken.isNotBlank())
+    )
     val uiState: StateFlow<UniversiticeUiState> = _uiState.asStateFlow()
 
     init {
-        attemptAutoLogin()
-    }
-
-    private fun attemptAutoLogin() {
         val currentToken = preferences.moodleToken
+        val currentUrl = preferences.moodleUrl
         if (currentToken.isNotBlank()) {
-            login(preferences.moodleUrl, currentToken)
+            fetchData(currentUrl, currentToken)
         }
     }
 
     fun login(url: String, token: String) {
+        _uiState.value = _uiState.value.copy(
+            isLogged = true,
+            errorMessage = null
+        )
+        fetchData(url, token)
+    }
+
+    private fun fetchData(url: String, token: String) {
         scope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true)
             
             try {
                 val client = MoodleClient(url, token)
@@ -49,7 +58,7 @@ class UniversiticeViewModel {
                 _uiState.value = _uiState.value.copy(
                     isLogged = false,
                     isLoading = false,
-                    errorMessage = "Erreur de connexion, vérifiez l'URL et le token."
+                    errorMessage = "Session expirée ou erreur réseau. Veuillez vous reconnecter."
                 )
             }
         }
