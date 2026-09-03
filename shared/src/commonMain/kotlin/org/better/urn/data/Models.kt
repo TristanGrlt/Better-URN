@@ -24,3 +24,75 @@ data class Course(
 
 @Serializable
 data class MoodleFile(val fileurl: String)
+
+@Serializable
+data class CourseSection(
+    val id: Int,
+    val name: String,
+    val summary: String? = null,
+    val visible: Int? = 1,
+    val modules: List<CourseModule> = emptyList()
+)
+
+@Serializable
+data class CourseModule(
+    val id: Int,
+    val name: String,
+    val modname: String,
+    val modicon: String? = null,
+    val description: String? = null,
+    val onclick: String? = null,
+    val url: String? = null,
+    val contents: List<ModuleContent>? = null,
+    val completion: Int? = null
+) {
+    /**
+     * Resolves the primary target URL for this module, prioritizing direct file URLs with webservice token authentication.
+     */
+    fun getPrimaryUrl(token: String): String? {
+        val directFileUrl = contents?.firstOrNull()?.fileurl
+        val rawUrl = directFileUrl ?: url ?: return null
+        if (token.isBlank()) return rawUrl
+
+        var targetUrl = rawUrl
+        if (targetUrl.contains("/pluginfile.php/") && !targetUrl.contains("/webservice/pluginfile.php/")) {
+            targetUrl = targetUrl.replace("/pluginfile.php/", "/webservice/pluginfile.php/")
+        }
+
+        if (targetUrl.contains("forcedownload=1")) {
+            targetUrl = targetUrl.replace("forcedownload=1", "forcedownload=0")
+        }
+
+        return if (targetUrl.contains("wstoken=") || targetUrl.contains("token=")) {
+            targetUrl
+        } else if (targetUrl.contains("?")) {
+            "$targetUrl&token=$token"
+        } else {
+            "$targetUrl?token=$token"
+        }
+    }
+}
+
+@Serializable
+data class ModuleContent(
+    val type: String? = null,
+    val filename: String? = null,
+    val filepath: String? = null,
+    val filesize: Long? = null,
+    val fileurl: String? = null,
+    val mimetype: String? = null,
+    val timecreated: Long? = null,
+    val timemodified: Long? = null
+) {
+    /**
+     * Returns a human-readable file size string.
+     */
+    fun getFormattedFileSize(): String? {
+        val bytes = filesize ?: return null
+        if (bytes <= 0) return null
+        val kb = bytes / 1024.0
+        if (kb < 1024) return "${(kb * 10).toInt() / 10.0} KB"
+        val mb = kb / 1024.0
+        return "${(mb * 10).toInt() / 10.0} MB"
+    }
+}

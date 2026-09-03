@@ -26,8 +26,28 @@ fun UniversiticeScreen(
     onLogin: (String, String) -> Unit,
     onRefresh: () -> Unit,
     onCourseClick: (Int) -> Unit,
+    onBackClick: () -> Unit = {},
+    onRefreshCourse: () -> Unit = {},
+    onToggleSectionCollapsed: (Int) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {}
 ) {
+    val token = UserPreferences().moodleToken
+
+    if (state.selectedCourse != null) {
+        CourseDetailScreen(
+            course = state.selectedCourse,
+            sections = state.courseSections,
+            collapsedSectionIds = state.collapsedSectionIds,
+            isLoading = state.isLoadingCourseContent,
+            errorMessage = state.errorMessage,
+            token = token,
+            onBackClick = onBackClick,
+            onRefresh = onRefreshCourse,
+            onToggleSectionCollapsed = onToggleSectionCollapsed
+        )
+        return
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
             title = "Universitice",
@@ -53,13 +73,12 @@ fun UniversiticeScreen(
                 }
             } else {
                 if (state.isLoading && state.courses.isEmpty()) {
-                    LoadingIndicator(
+                    CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(64.dp)
                     )
                 } else {
                     val filteredCourses = state.filteredCourses
-                    val token = UserPreferences().moodleToken
 
                     PullToRefreshBox(
                         isRefreshing = state.isLoading,

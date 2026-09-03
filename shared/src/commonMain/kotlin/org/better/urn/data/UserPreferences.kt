@@ -7,7 +7,11 @@ import kotlinx.serialization.json.Json
 class UserPreferences {
     private val settings: Settings = Settings()
     
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { 
+        ignoreUnknownKeys = true 
+        coerceInputValues = true
+        isLenient = true
+    }
 
     var moodleUrl: String
         get() = settings.getString("moodle_url", "https://universitice.univ-rouen.fr")
@@ -33,4 +37,32 @@ class UserPreferences {
             try { json.decodeFromString(it) } catch (e: Exception) { emptyList() } 
         } ?: emptyList()
         set(value) = settings.putString("cached_courses", json.encodeToString(value))
+
+    fun getCachedCourseSections(courseId: Int): List<CourseSection> {
+        val key = "cached_course_sections_$courseId"
+        return settings.getStringOrNull(key)?.let {
+            try { json.decodeFromString(it) } catch (e: Exception) { emptyList() }
+        } ?: emptyList()
+    }
+
+    fun setCachedCourseSections(courseId: Int, sections: List<CourseSection>) {
+        val key = "cached_course_sections_$courseId"
+        try {
+            settings.putString(key, json.encodeToString(sections))
+        } catch (_: Exception) {
+            // Ignore cache storage overflow errors on Desktop/JVM
+        }
+    }
+
+    fun getCollapsedSectionIds(courseId: Int): Set<Int> {
+        val key = "collapsed_sections_$courseId"
+        return settings.getStringOrNull(key)?.let {
+            try { json.decodeFromString(it) } catch (e: Exception) { emptySet() }
+        } ?: emptySet()
+    }
+
+    fun setCollapsedSectionIds(courseId: Int, sectionIds: Set<Int>) {
+        val key = "collapsed_sections_$courseId"
+        settings.putString(key, json.encodeToString(sectionIds))
+    }
 }

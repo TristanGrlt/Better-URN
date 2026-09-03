@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.better.urn.data.Course
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.UserPreferences
 
@@ -45,6 +46,89 @@ class UniversiticeViewModel {
         val currentUrl = preferences.moodleUrl
         if (currentToken.isNotBlank()) {
             fetchData(currentUrl, currentToken)
+            if (_uiState.value.selectedCourse != null) {
+                refreshCurrentCourse()
+            }
+        }
+    }
+
+    fun openCourse(courseId: Int) {
+        val course = _uiState.value.courses.find { it.id == courseId }
+            ?: preferences.cachedCourses.find { it.id == courseId }
+            ?: return
+
+        val cachedSections = preferences.getCachedCourseSections(courseId)
+        val collapsedIds = preferences.getCollapsedSectionIds(courseId)
+
+        _uiState.value = _uiState.value.copy(
+            selectedCourse = course,
+            courseSections = cachedSections,
+            collapsedSectionIds = collapsedIds,
+            errorMessage = null
+        )
+
+        fetchCourseContent(courseId)
+    }
+
+    fun closeCourse() {
+        _uiState.value = _uiState.value.copy(
+            selectedCourse = null,
+            courseSections = emptyList(),
+            collapsedSectionIds = emptySet()
+        )
+    }
+
+    fun toggleSectionCollapsed(sectionId: Int) {
+        val courseId = _uiState.value.selectedCourse?.id ?: return
+        val currentCollapsed = _uiState.value.collapsedSectionIds.toMutableSet()
+
+        if (currentCollapsed.contains(sectionId)) {
+            currentCollapsed.remove(sectionId)
+        } else {
+            currentCollapsed.add(sectionId)
+        }
+
+        preferences.setCollapsedSectionIds(courseId, currentCollapsed)
+        _uiState.value = _uiState.value.copy(collapsedSectionIds = currentCollapsed)
+    }
+
+    fun refreshCurrentCourse() {
+        val courseId = _uiState.value.selectedCourse?.id ?: return
+        if (_uiState.value.isLoadingCourseContent) return
+        fetchCourseContent(courseId)
+    }
+
+    private fun fetchCourseContent(courseId: Int) {
+        val token = preferences.moodleToken
+        val url = preferences.moodleUrl
+        if (token.isBlank()) return
+
+        scope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingCourseContent = true)
+            try {
+                val client = MoodleClient(url, token)
+                val sections = client.getCourseContents(courseId)
+
+                try {
+                    preferences.setCachedCourseSections(courseId, sections)
+                } catch (_: Exception) {
+                    // Ignore cache write error to ensure UI renders fetched course
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    courseSections = sections,
+                    isLoadingCourseContent = false,
+                    errorMessage = null
+                )
+            } catch (e: Exception) {
+                val cachedSections = preferences.getCachedCourseSections(courseId)
+                val displaySections = cachedSections.ifEmpty { _uiState.value.courseSections }
+                _uiState.value = _uiState.value.copy(
+                    courseSections = displaySections,
+                    isLoadingCourseContent = false,
+                    errorMessage = if (displaySections.isEmpty()) (e.message ?: "Impossible de charger le cours.") else "Mode hors-ligne : affichage des sections sauvegardées."
+                )
+            }
         }
     }
 

@@ -67,7 +67,10 @@ fun App() {
                             state = state,
                             onLogin = { url, token -> universiticeViewModel.login(url, token) },
                             onRefresh = { universiticeViewModel.refresh() },
-                            onCourseClick = { courseId -> println("Ouverture du cours $courseId") },
+                            onCourseClick = { courseId -> universiticeViewModel.openCourse(courseId) },
+                            onBackClick = { universiticeViewModel.closeCourse() },
+                            onRefreshCourse = { universiticeViewModel.refreshCurrentCourse() },
+                            onToggleSectionCollapsed = { sectionId -> universiticeViewModel.toggleSectionCollapsed(sectionId) },
                             onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) }
                         )
                     }

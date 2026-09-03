@@ -1,6 +1,7 @@
 package org.better.urn.ui.universitice
 
 import org.better.urn.data.Course
+import org.better.urn.data.CourseSection
 import org.better.urn.data.MoodleUser
 import kotlin.math.abs
 
@@ -10,7 +11,11 @@ data class UniversiticeUiState(
     val errorMessage: String? = null,
     val user: MoodleUser? = null,
     val courses: List<Course> = emptyList(),
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val selectedCourse: Course? = null,
+    val courseSections: List<CourseSection> = emptyList(),
+    val collapsedSectionIds: Set<Int> = emptySet(),
+    val isLoadingCourseContent: Boolean = false
 ) {
     val filteredCourses: List<Course>
         get() {

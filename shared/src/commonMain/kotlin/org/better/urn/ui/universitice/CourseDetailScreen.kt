@@ -1,0 +1,300 @@
+package org.better.urn.ui.universitice
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import org.better.urn.data.Course
+import org.better.urn.data.CourseSection
+import org.better.urn.ui.components.BetterUrnTopBar
+import org.better.urn.ui.universitice.components.CourseModuleItem
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CourseDetailScreen(
+    course: Course,
+    sections: List<CourseSection>,
+    collapsedSectionIds: Set<Int>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    token: String,
+    onBackClick: () -> Unit,
+    onRefresh: () -> Unit,
+    onToggleSectionCollapsed: (Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        BetterUrnTopBar(
+            title = course.fullname,
+            onBackClick = onBackClick,
+            onRefresh = onRefresh,
+            isRefreshing = isLoading,
+            refreshContentDescription = "Actualiser le contenu du cours"
+        )
+
+        if (isLoading) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            )
+        }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            PullToRefreshBox(
+                isRefreshing = false,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 960.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                        .align(Alignment.TopCenter)
+                ) {
+                    if (errorMessage != null && sections.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = errorMessage,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+
+                    if (sections.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isLoading) {
+                                Text(
+                                    text = "Chargement des sections...",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else if (errorMessage != null) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.CloudOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = errorMessage,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(
+                                        onClick = onRefresh,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Réessayer")
+                                    }
+                                }
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Folder,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "Aucune section disponible dans ce cours",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            sections.forEach { section ->
+                                if (section.modules.isNotEmpty() || !section.summary.isNullOrBlank()) {
+                                    val visibleModules = section.modules.filter { it.modname != "label" || it.name.isNotBlank() }
+                                    val isExpanded = !collapsedSectionIds.contains(section.id)
+
+                                    item(key = "section_header_${section.id}") {
+                                        CourseSectionHeaderItem(
+                                            sectionName = section.name,
+                                            moduleCount = visibleModules.size,
+                                            isExpanded = isExpanded,
+                                            onToggleExpand = { onToggleSectionCollapsed(section.id) }
+                                        )
+                                    }
+
+                                    if (isExpanded) {
+                                        if (!section.summary.isNullOrBlank()) {
+                                            item(key = "section_summary_${section.id}") {
+                                                CourseSectionSummaryItem(summary = section.summary)
+                                            }
+                                        }
+
+                                        items(
+                                            items = visibleModules,
+                                            key = { module -> "module_${section.id}_${module.id}" }
+                                        ) { module ->
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                            ) {
+                                                CourseModuleItem(
+                                                    module = module,
+                                                    token = token
+                                                )
+                                            }
+                                        }
+
+                                        item(key = "section_spacer_${section.id}") {
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseSectionHeaderItem(
+    sectionName: String,
+    moduleCount: Int,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
+) {
+    val cleanedName = remember(sectionName) { cleanHtml(sectionName) }
+
+    ElevatedCard(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onToggleExpand() }
+                .padding(16.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (cleanedName.isBlank()) "Général" else cleanedName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (moduleCount > 0) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "$moduleCount ressource${if (moduleCount > 1) "s" else ""}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            IconButton(onClick = onToggleExpand) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Réduire la section" else "Déplier la section",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseSectionSummaryItem(summary: String) {
+    val cleanedSummary = remember(summary) { cleanHtml(summary) }
+    if (cleanedSummary.isBlank()) return
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = cleanedSummary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(12.dp)
+        )
+    }
+}
+
+private val HTML_TAG_REGEX = Regex("<[^>]*>")
+
+private fun cleanHtml(html: String): String {
+    if (!html.contains('<')) return html.trim()
+    return html.replace(HTML_TAG_REGEX, "").trim()
+}
