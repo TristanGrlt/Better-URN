@@ -1,18 +1,22 @@
 package org.better.urn
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState 
+import androidx.compose.runtime.getValue       
+import androidx.compose.runtime.setValue       
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.launch
-import org.better.urn.data.Course
-import org.better.urn.data.MoodleClient
-import org.better.urn.data.MoodleUser
 import org.better.urn.data.UserPreferences
-import org.better.urn.ui.HomeScreen
+import org.better.urn.ui.UniversiticeViewModel
+import org.better.urn.ui.UniversiticeScreen
 import org.better.urn.ui.LoginScreen
+import org.better.urn.ui.navigation.AppScreen
+import org.better.urn.ui.MainLayout
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF00497D),
@@ -50,74 +54,44 @@ fun App() {
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            val coroutineScope = rememberCoroutineScope()
-            val preferences = remember { UserPreferences() }
+            val viewModel = remember { UniversiticeViewModel() }
+            val state by viewModel.uiState.collectAsState()
+            
+            var currentScreen by remember { mutableStateOf(AppScreen.UNIVERSITICE) }
 
-            var isLogged by remember { mutableStateOf(preferences.moodleToken.isNotBlank()) }
-            var isLoading by remember { mutableStateOf(false) }
-            var errorMessage by remember { mutableStateOf<String?>(null) }
-
-            var user by remember { mutableStateOf<MoodleUser?>(null) }
-            var courses by remember { mutableStateOf<List<Course>>(emptyList()) }
-            val currentToken = preferences.moodleToken
-
-            // Connexion automatique au lancement si le token est enregistré
-            LaunchedEffect(currentToken) {
-                if (currentToken.isNotBlank()) {
-                    isLoading = true
-                    try {
-                        val client = MoodleClient(preferences.moodleUrl, currentToken)
-                        val fetchedUser = client.getUserProfile()
-                        val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
-                        user = fetchedUser
-                        courses = fetchedCourses
-                        isLogged = true
-                    } catch (e: Exception) {
-                        preferences.moodleToken = "" // Réinitialise si le token est invalide
-                        isLogged = false
-                    } finally {
-                        isLoading = false
-                    }
-                }
-            }
-
-            if (!isLogged) {
+            if (!state.isLogged) {
                 LoginScreen(
-                    isLoading = isLoading,
-                    errorMessage = errorMessage,
-                    onLogin = { url, token ->
-                        coroutineScope.launch {
-                            isLoading = true
-                            errorMessage = null
-                            try {
-                                val client = MoodleClient(url, token)
-                                val fetchedUser = client.getUserProfile()
-                                val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
-                                
-                                // Sauvegarde locale
-                                preferences.moodleUrl = url
-                                preferences.moodleToken = token
-
-                                user = fetchedUser
-                                courses = fetchedCourses
-                                isLogged = true
-                            } catch (e: Exception) {
-                                errorMessage = "Erreur de connexion, vérifiez l'URL et le token."
-                            } finally {
-                                isLoading = false
-                            }
-                        }
-                    }
+                    isLoading = state.isLoading,
+                    errorMessage = state.errorMessage,
+                    onLogin = { url, token -> viewModel.login(url, token) }
                 )
             } else {
-                HomeScreen(
-                    userName = user?.fullname ?: "Étudiant",
-                    courses = courses,
-                    token = currentToken, // Passage du token pour les images
-                    onCourseClick = { courseId ->
-                        println("Ouverture du cours $courseId")
+                MainLayout(
+                    currentScreen = currentScreen,
+                    onScreenSelected = { currentScreen = it }
+                ) {
+                    when (currentScreen) {
+                        AppScreen.UNIVERSITICE -> {
+                            UniversiticeScreen(
+                                userName = state.user?.fullname ?: "Étudiant",
+                                courses = state.courses,
+                                token = UserPreferences().moodleToken,
+                                onCourseClick = { courseId -> println("Ouverture du cours $courseId") }
+                            )
+                        }
+                        AppScreen.IZLY -> {
+                            // Plus tard : IzlyScreen()
+                            Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
+                        }
+                        AppScreen.EDT -> {
+                            // Plus tard : EdtScreen()
+                            Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
+                        }
+                        AppScreen.AUTRE -> {
+                            Text("Autres options...", modifier = Modifier.padding(16.dp))
+                        }
                     }
-                )
+                }
             }
         }
     }
