@@ -28,5 +28,15 @@ class SharedCommonTest {
         // Search with accents "réseau" for unaccented query/course
         val state3 = UniversiticeUiState(courses = courses, searchQuery = "réseau")
         assertEquals(1, state3.filteredCourses.size)
+
+        // Fuzzy search with typo: "mathematiq" (missing 'ue')
+        val state4 = UniversiticeUiState(courses = courses, searchQuery = "mathematiq")
+        assertEquals(1, state4.filteredCourses.size)
+        assertEquals("Mathématiques et Systèmes", state4.filteredCourses.first().fullname)
+
+        // Fuzzy search with typo: "algotithme" ('t' instead of 'r')
+        val state5 = UniversiticeUiState(courses = courses, searchQuery = "algotithme")
+        assertEquals(1, state5.filteredCourses.size)
+        assertEquals("Algorithmique", state5.filteredCourses.first().fullname)
     }
 }
