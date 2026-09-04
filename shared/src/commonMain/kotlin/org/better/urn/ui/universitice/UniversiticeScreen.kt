@@ -28,7 +28,8 @@ import org.better.urn.ui.navigation.BackHandler
 @Composable
 fun UniversiticeScreen(
     state: UniversiticeUiState,
-    onLogin: (String, String) -> Unit,
+    onInitiateLogin: (String) -> String = { "" },
+    onAuthInput: (String, String) -> Unit = { _, _ -> },
     onRefresh: () -> Unit,
     onCourseClick: (Int) -> Unit,
     onBackClick: () -> Unit = {},
@@ -80,7 +81,8 @@ fun UniversiticeScreen(
                     LoginScreen(
                         isLoading = state.isLoading,
                         errorMessage = state.errorMessage,
-                        onLogin = onLogin
+                        onInitiateLogin = onInitiateLogin,
+                        onAuthInput = onAuthInput
                     )
                 }
             } else {

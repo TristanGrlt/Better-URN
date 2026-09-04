@@ -9,32 +9,7 @@ class UserPreferences {
         try {
             Settings()
         } catch (_: Throwable) {
-            object : Settings {
-                private val map = mutableMapOf<String, Any>()
-                override val keys: Set<String> get() = map.keys
-                override val size: Int get() = map.size
-                override fun clear() = map.clear()
-                override fun remove(key: String) { map.remove(key) }
-                override fun hasKey(key: String): Boolean = map.containsKey(key)
-                override fun putString(key: String, value: String) { map[key] = value }
-                override fun getString(key: String, defaultValue: String): String = (map[key] as? String) ?: defaultValue
-                override fun getStringOrNull(key: String): String? = map[key] as? String
-                override fun putInt(key: String, value: Int) { map[key] = value }
-                override fun getInt(key: String, defaultValue: Int): Int = (map[key] as? Int) ?: defaultValue
-                override fun getIntOrNull(key: String): Int? = map[key] as? Int
-                override fun putLong(key: String, value: Long) { map[key] = value }
-                override fun getLong(key: String, defaultValue: Long): Long = (map[key] as? Long) ?: defaultValue
-                override fun getLongOrNull(key: String): Long? = map[key] as? Long
-                override fun putFloat(key: String, value: Float) { map[key] = value }
-                override fun getFloat(key: String, defaultValue: Float): Float = (map[key] as? Float) ?: defaultValue
-                override fun getFloatOrNull(key: String): Float? = map[key] as? Float
-                override fun putDouble(key: String, value: Double) { map[key] = value }
-                override fun getDouble(key: String, defaultValue: Double): Double = (map[key] as? Double) ?: defaultValue
-                override fun getDoubleOrNull(key: String): Double? = map[key] as? Double
-                override fun putBoolean(key: String, value: Boolean) { map[key] = value }
-                override fun getBoolean(key: String, defaultValue: Boolean): Boolean = (map[key] as? Boolean) ?: defaultValue
-                override fun getBooleanOrNull(key: String): Boolean? = map[key] as? Boolean
-            }
+            fallbackSettings
         }
     }
     
@@ -69,6 +44,16 @@ class UserPreferences {
                 SecureStorage.removeSecureString("moodle_token")
             }
             settings.remove("moodle_token")
+        }
+
+    var moodlePassport: String?
+        get() = settings.getStringOrNull("moodle_passport")
+        set(value) {
+            if (!value.isNullOrBlank()) {
+                settings.putString("moodle_passport", value)
+            } else {
+                settings.remove("moodle_passport")
+            }
         }
 
     // --- Caching (File-based via CacheStorage) ---
@@ -119,5 +104,34 @@ class UserPreferences {
     fun setCollapsedSectionIds(courseId: Int, sectionIds: Set<Int>) {
         val key = "collapsed_sections_$courseId"
         settings.putString(key, json.encodeToString(sectionIds))
+    }
+
+    companion object {
+        private val fallbackMap = mutableMapOf<String, Any>()
+        private val fallbackSettings = object : Settings {
+            override val keys: Set<String> get() = fallbackMap.keys
+            override val size: Int get() = fallbackMap.size
+            override fun clear() = fallbackMap.clear()
+            override fun remove(key: String) { fallbackMap.remove(key) }
+            override fun hasKey(key: String): Boolean = fallbackMap.containsKey(key)
+            override fun putString(key: String, value: String) { fallbackMap[key] = value }
+            override fun getString(key: String, defaultValue: String): String = (fallbackMap[key] as? String) ?: defaultValue
+            override fun getStringOrNull(key: String): String? = fallbackMap[key] as? String
+            override fun putInt(key: String, value: Int) { fallbackMap[key] = value }
+            override fun getInt(key: String, defaultValue: Int): Int = (fallbackMap[key] as? Int) ?: defaultValue
+            override fun getIntOrNull(key: String): Int? = fallbackMap[key] as? Int
+            override fun putLong(key: String, value: Long) { fallbackMap[key] = value }
+            override fun getLong(key: String, defaultValue: Long): Long = (fallbackMap[key] as? Long) ?: defaultValue
+            override fun getLongOrNull(key: String): Long? = fallbackMap[key] as? Long
+            override fun putFloat(key: String, value: Float) { fallbackMap[key] = value }
+            override fun getFloat(key: String, defaultValue: Float): Float = (fallbackMap[key] as? Float) ?: defaultValue
+            override fun getFloatOrNull(key: String): Float? = fallbackMap[key] as? Float
+            override fun putDouble(key: String, value: Double) { fallbackMap[key] = value }
+            override fun getDouble(key: String, defaultValue: Double): Double = (fallbackMap[key] as? Double) ?: defaultValue
+            override fun getDoubleOrNull(key: String): Double? = fallbackMap[key] as? Double
+            override fun putBoolean(key: String, value: Boolean) { fallbackMap[key] = value }
+            override fun getBoolean(key: String, defaultValue: Boolean): Boolean = (fallbackMap[key] as? Boolean) ?: defaultValue
+            override fun getBooleanOrNull(key: String): Boolean? = fallbackMap[key] as? Boolean
+        }
     }
 }

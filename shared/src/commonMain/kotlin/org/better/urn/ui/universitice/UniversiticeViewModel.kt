@@ -11,13 +11,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineDispatcher
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.MoodleTokenExpiredException
 import org.better.urn.data.UserPreferences
+import org.better.urn.data.auth.MoodleAuthInitiator
+import org.better.urn.data.auth.MoodleAuthNormalizer
+import org.better.urn.data.auth.MoodleAuthParser
+import org.better.urn.data.auth.MoodleAuthValidator
 
-class UniversiticeViewModel {
+class UniversiticeViewModel(
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+) {
     private val preferences = UserPreferences()
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val scope = CoroutineScope(mainDispatcher)
 
     private val _uiState = MutableStateFlow(
         UniversiticeUiState(
@@ -33,6 +40,43 @@ class UniversiticeViewModel {
         if (currentToken.isNotBlank()) {
             fetchData(currentUrl, currentToken)
         }
+    }
+
+    /**
+     * Initiates the Web SSO authentication flow by generating an ephemeral passport
+     * and creating the launch URL.
+     */
+    fun initiateLogin(baseUrl: String): String {
+        val targetUrl = baseUrl.ifBlank { preferences.moodleUrl }
+        preferences.moodleUrl = targetUrl
+        val passport = MoodleAuthInitiator.generatePassport()
+        preferences.moodlePassport = passport
+        return MoodleAuthInitiator.createLaunchUrl(targetUrl, passport)
+    }
+
+    /**
+     * Handles incoming deep links or raw token input, parses the payload, validates security rules,
+     * and authenticates the user if valid.
+     */
+    fun handleAuthInput(input: String, overrideUrl: String? = null): Boolean {
+        if (input.isBlank()) return false
+        val storedPassport = preferences.moodlePassport
+        val normalized = MoodleAuthNormalizer.normalize(input)
+        val payload = MoodleAuthParser.parse(normalized)
+        val isValid = MoodleAuthValidator.validate(payload, storedPassport)
+
+        if (!isValid || payload == null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Authentification échouée : jeton invalide ou échec de vérification de sécurité."
+            )
+            return false
+        }
+
+        // Cleanup temporary passport after successful validation
+        preferences.moodlePassport = null
+        val targetUrl = overrideUrl?.ifBlank { null } ?: preferences.moodleUrl
+        login(targetUrl, payload.token)
+        return true
     }
 
     fun login(url: String, token: String) {

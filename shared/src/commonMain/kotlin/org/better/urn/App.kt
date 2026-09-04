@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -53,13 +54,23 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun App() {
+fun App(
+    deepLink: String? = null,
+    onDeepLinkHandled: () -> Unit = {}
+) {
     MaterialTheme(
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
             val universiticeViewModel = remember { UniversiticeViewModel() }
             val state by universiticeViewModel.uiState.collectAsState()
+
+            LaunchedEffect(deepLink) {
+                if (!deepLink.isNullOrBlank()) {
+                    universiticeViewModel.handleAuthInput(deepLink)
+                    onDeepLinkHandled()
+                }
+            }
 
             val tabBackstack = remember { mutableStateListOf(AppScreen.UNIVERSITICE) }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
@@ -89,7 +100,8 @@ fun App() {
                     AppScreen.UNIVERSITICE -> {
                         UniversiticeScreen(
                             state = state,
-                            onLogin = { url, token -> universiticeViewModel.login(url, token) },
+                            onInitiateLogin = { baseUrl -> universiticeViewModel.initiateLogin(baseUrl) },
+                            onAuthInput = { input, url -> universiticeViewModel.handleAuthInput(input, url) },
                             onRefresh = { universiticeViewModel.refresh() },
                             onCourseClick = { courseId -> universiticeViewModel.openCourse(courseId) },
                             onBackClick = { universiticeViewModel.closeCourse() },
