@@ -1,20 +1,26 @@
 package org.better.urn
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.collectAsState 
-import androidx.compose.runtime.getValue       
-import androidx.compose.runtime.setValue       
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.unit.dp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import org.better.urn.ui.universitice.UniversiticeViewModel
-import org.better.urn.ui.universitice.UniversiticeScreen
-import org.better.urn.ui.navigation.AppScreen
+import androidx.compose.ui.unit.dp
 import org.better.urn.ui.MainLayout
+import org.better.urn.ui.navigation.AppScreen
+import org.better.urn.ui.navigation.BackHandler
+import org.better.urn.ui.universitice.UniversiticeScreen
+import org.better.urn.ui.universitice.UniversiticeViewModel
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF00497D),
@@ -54,12 +60,30 @@ fun App() {
         Surface(modifier = Modifier.fillMaxSize()) {
             val universiticeViewModel = remember { UniversiticeViewModel() }
             val state by universiticeViewModel.uiState.collectAsState()
-            
-            var currentScreen by remember { mutableStateOf(AppScreen.UNIVERSITICE) }
+
+            val tabBackstack = remember { mutableStateListOf(AppScreen.UNIVERSITICE) }
+            val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
+
+            BackHandler(enabled = tabBackstack.size > 1) {
+                tabBackstack.removeAt(tabBackstack.lastIndex)
+            }
 
             MainLayout(
                 currentScreen = currentScreen,
-                onScreenSelected = { currentScreen = it }
+                onScreenSelected = { selected ->
+                    if (selected != currentScreen) {
+                        tabBackstack.remove(selected)
+                        tabBackstack.add(selected)
+                    } else {
+                        if (selected == AppScreen.UNIVERSITICE) {
+                            if (state.selectedCourse != null) {
+                                universiticeViewModel.closeCourse()
+                            } else if (state.searchQuery.isNotEmpty()) {
+                                universiticeViewModel.onSearchQueryChange("")
+                            }
+                        }
+                    }
+                }
             ) {
                 when (currentScreen) {
                     AppScreen.UNIVERSITICE -> {
@@ -75,11 +99,9 @@ fun App() {
                         )
                     }
                     AppScreen.IZLY -> {
-                        // Plus tard : IzlyScreen()
                         Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
                     }
                     AppScreen.EDT -> {
-                        // Plus tard : EdtScreen()
                         Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
                     }
                     AppScreen.AUTRE -> {
@@ -87,7 +109,6 @@ fun App() {
                     }
                 }
             }
-            
         }
     }
 }

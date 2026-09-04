@@ -23,6 +23,7 @@ import org.better.urn.data.UserPreferences
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
 import org.better.urn.ui.components.M3CoursesLoadingView
+import org.better.urn.ui.navigation.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +40,9 @@ fun UniversiticeScreen(
     val token = UserPreferences().moodleToken
 
     if (state.selectedCourse != null) {
+        BackHandler(enabled = true) {
+            onBackClick()
+        }
         CourseDetailScreen(
             course = state.selectedCourse,
             sections = state.courseSections,
@@ -51,6 +55,10 @@ fun UniversiticeScreen(
             onToggleSectionCollapsed = onToggleSectionCollapsed
         )
         return
+    }
+
+    BackHandler(enabled = state.searchQuery.isNotEmpty()) {
+        onSearchQueryChange("")
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
