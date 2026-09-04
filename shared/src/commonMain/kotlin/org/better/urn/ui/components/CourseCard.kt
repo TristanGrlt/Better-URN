@@ -17,7 +17,7 @@ import org.better.urn.data.Course
 
 @Composable
 fun CourseCard(course: Course, token: String, onClick: () -> Unit) {
-    val imageUrl = course.getImageUrl(token)
+    val imageUrl = course.imageUrl ?: course.getImageUrl(token)
 
     Card(
         onClick = onClick,

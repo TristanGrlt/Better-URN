@@ -39,10 +39,6 @@ fun CourseModuleItem(
     val icon = remember(module.modname, firstContent?.mimetype) {
         getModuleIcon(module.modname, firstContent?.mimetype)
     }
-    val cleanedName = remember(module.name) { cleanHtml(module.name) }
-    val cleanedDescription = remember(module.description) {
-        module.description?.let { cleanHtml(it) }?.takeIf { it.isNotBlank() }
-    }
 
     val subtitle = remember(module.modname, firstContent?.filesize) {
         val fileSize = firstContent?.getFormattedFileSize()
@@ -58,6 +54,8 @@ fun CourseModuleItem(
         }
     }
 
+    val cleanedName = module.name
+    val cleanedDescription = module.description?.takeIf { it.isNotBlank() }
     val hasSupporting = subtitle.isNotBlank() || cleanedDescription != null
 
     ListItem(
@@ -143,8 +141,7 @@ private fun LabelModuleItem(
     description: String?,
     modifier: Modifier = Modifier
 ) {
-    val rawText = if (!description.isNullOrBlank()) description else name
-    val cleanedText = remember(rawText) { cleanHtml(rawText) }
+    val cleanedText = if (!description.isNullOrBlank()) description else name
     if (cleanedText.isBlank()) return
 
     Surface(
@@ -192,22 +189,4 @@ private fun getModuleTypeLabel(modName: String): String {
         "page" -> "Page"
         else -> ""
     }
-}
-
-private val BR_REGEX = Regex("(?i)<br\\s*/?>")
-private val BLOCK_TAG_REGEX = Regex("(?i)</(p|div|li|h[1-6]|tr)>")
-private val ALL_TAG_REGEX = Regex("<[^>]*>")
-private val MULTI_NEWLINE_REGEX = Regex("\n{3,}")
-
-/**
- * Fast and memory-friendly HTML tag stripper that preserves paragraph line breaks.
- */
-private fun cleanHtml(html: String): String {
-    if (!html.contains('<')) return html.trim()
-    val formatted = html
-        .replace(BR_REGEX, "\n")
-        .replace(BLOCK_TAG_REGEX, "\n")
-        .replace(ALL_TAG_REGEX, "")
-        .replace(MULTI_NEWLINE_REGEX, "\n\n")
-    return formatted.trim()
 }

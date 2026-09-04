@@ -36,10 +36,10 @@ fun CourseSectionCard(
     val visibleModules = remember(section.modules) {
         section.modules.filter { it.modname != "label" || it.name.isNotBlank() }
     }
-    val cleanedName = remember(section.name) { cleanHtml(section.name) }
-    val cleanedSummary = remember(section.summary) {
-        section.summary?.let { cleanHtml(it) } ?: ""
-    }
+    val cleanedName = section.name
+    val cleanedSummary = section.summary.orEmpty()
+
+    val onToggle = remember(onToggleExpand) { { onToggleExpand() } }
 
     ElevatedCard(
         shape = RoundedCornerShape(16.dp),
@@ -55,7 +55,7 @@ fun CourseSectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { onToggleExpand() }
+                    .clickable { onToggle() }
                     .padding(16.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -75,7 +75,7 @@ fun CourseSectionCard(
                     }
                 }
 
-                IconButton(onClick = onToggleExpand) {
+                IconButton(onClick = onToggle) {
                     Icon(
                         imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = if (isExpanded) "Réduire la section" else "Déplier la section",
@@ -119,14 +119,4 @@ fun CourseSectionCard(
             }
         }
     }
-}
-
-private val HTML_TAG_REGEX = Regex("<[^>]*>")
-
-/**
- * Fast and memory-friendly HTML tag stripper.
- */
-private fun cleanHtml(html: String): String {
-    if (!html.contains('<')) return html.trim()
-    return html.replace(HTML_TAG_REGEX, "").trim()
 }

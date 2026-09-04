@@ -1,7 +1,9 @@
 package org.better.urn.data
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 data class MoodleUser(
     val userid: Int,
@@ -9,22 +11,32 @@ data class MoodleUser(
     val userpictureurl: String
 )
 
+@Immutable
 @Serializable
 data class Course(
     val id: Int,
     val fullname: String,
     val shortname: String,
-    val overviewfiles: List<MoodleFile> = emptyList()
+    val overviewfiles: List<MoodleFile> = emptyList(),
+    val imageUrl: String? = null
 ) {
     fun getImageUrl(token: String): String? {
+        if (imageUrl != null) return imageUrl
         val fileUrl = overviewfiles.firstOrNull()?.fileurl ?: return null
+        if (token.isBlank()) return fileUrl
         return "$fileUrl?token=$token"
+    }
+
+    fun withResolvedImageUrl(token: String): Course {
+        return copy(imageUrl = getImageUrl(token))
     }
 }
 
+@Immutable
 @Serializable
 data class MoodleFile(val fileurl: String)
 
+@Immutable
 @Serializable
 data class CourseSection(
     val id: Int,
@@ -32,8 +44,15 @@ data class CourseSection(
     val summary: String? = null,
     val visible: Int? = 1,
     val modules: List<CourseModule> = emptyList()
-)
+) {
+    fun sanitized(): CourseSection = copy(
+        name = name.cleanHtml(),
+        summary = summary?.cleanHtml()?.takeIf { it.isNotBlank() },
+        modules = modules.map { it.sanitized() }
+    )
+}
 
+@Immutable
 @Serializable
 data class CourseModule(
     val id: Int,
@@ -46,6 +65,11 @@ data class CourseModule(
     val contents: List<ModuleContent>? = null,
     val completion: Int? = null
 ) {
+    fun sanitized(): CourseModule = copy(
+        name = name.cleanHtml(),
+        description = description?.cleanHtml()?.takeIf { it.isNotBlank() }
+    )
+
     /**
      * Resolves the primary target URL for this module, prioritizing direct file URLs with webservice token authentication.
      */
@@ -73,6 +97,7 @@ data class CourseModule(
     }
 }
 
+@Immutable
 @Serializable
 data class ModuleContent(
     val type: String? = null,

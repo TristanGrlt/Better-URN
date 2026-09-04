@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
-import org.better.urn.data.UserPreferences
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
 import org.better.urn.ui.components.M3CoursesLoadingView
@@ -37,7 +36,7 @@ fun UniversiticeScreen(
     onToggleSectionCollapsed: (Int) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {}
 ) {
-    val token = UserPreferences().moodleToken
+    val token = state.token
 
     if (state.selectedCourse != null) {
         BackHandler(enabled = true) {
@@ -212,10 +211,13 @@ fun UniversiticeScreen(
                                     contentPadding = PaddingValues(bottom = 16.dp)
                                 ) {
                                     items(filteredCourses, key = { it.id }) { course ->
+                                        val onClick = remember(course.id, onCourseClick) {
+                                            { onCourseClick(course.id) }
+                                        }
                                         CourseCard(
                                             course = course,
                                             token = token,
-                                            onClick = { onCourseClick(course.id) }
+                                            onClick = onClick
                                         )
                                     }
                                 }

@@ -1,5 +1,6 @@
 package org.better.urn
 
+import kotlinx.collections.immutable.toImmutableList
 import org.better.urn.data.Course
 import org.better.urn.ui.universitice.UniversiticeUiState
 import kotlin.test.Test
@@ -13,7 +14,7 @@ class SharedCommonTest {
             Course(id = 1, fullname = "Mathématiques et Systèmes", shortname = "MATH101"),
             Course(id = 2, fullname = "Réseaux & Télécoms", shortname = "NET201"),
             Course(id = 3, fullname = "Algorithmique", shortname = "ALG301")
-        )
+        ).toImmutableList()
 
         // Search "mathematique" without accents
         val state1 = UniversiticeUiState(courses = courses, searchQuery = "mathematique")
@@ -38,6 +39,18 @@ class SharedCommonTest {
         val state5 = UniversiticeUiState(courses = courses, searchQuery = "algotithme")
         assertEquals(1, state5.filteredCourses.size)
         assertEquals("Algorithmique", state5.filteredCourses.first().fullname)
+    }
+
+    @Test
+    fun testEmptySearchQueryReturnsAllCourses() {
+        val courses = listOf(
+            Course(id = 1, fullname = "Course 1", shortname = "C1"),
+            Course(id = 2, fullname = "Course 2", shortname = "C2")
+        ).toImmutableList()
+
+        val state = UniversiticeUiState(courses = courses, searchQuery = "")
+        assertEquals(2, state.filteredCourses.size)
+        assertEquals(courses.toList(), state.filteredCourses.toList())
     }
 
     @Test

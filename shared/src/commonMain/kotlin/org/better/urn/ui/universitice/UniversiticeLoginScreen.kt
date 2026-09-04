@@ -2,12 +2,17 @@ package org.better.urn.ui.universitice
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -20,6 +25,7 @@ fun LoginScreen(
 ) {
     var url by remember { mutableStateOf("https://universitice.univ-rouen.fr") }
     var token by remember { mutableStateOf("") }
+    var isTokenVisible by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -70,7 +76,20 @@ fun LoginScreen(
                     onValueChange = { token = it },
                     label = { Text("Clé API (Token)") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    visualTransformation = if (isTokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        autoCorrectEnabled = false
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { isTokenVisible = !isTokenVisible }) {
+                            Icon(
+                                imageVector = if (isTokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (isTokenVisible) "Masquer le token" else "Afficher le token"
+                            )
+                        }
+                    }
                 )
 
                 Text(

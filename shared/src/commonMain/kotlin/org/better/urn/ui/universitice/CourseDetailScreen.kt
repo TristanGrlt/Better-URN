@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
 import org.better.urn.ui.components.BetterUrnTopBar
@@ -31,8 +33,8 @@ import org.better.urn.ui.universitice.components.CourseModuleItem
 @Composable
 fun CourseDetailScreen(
     course: Course,
-    sections: List<CourseSection>,
-    collapsedSectionIds: Set<Int>,
+    sections: ImmutableList<CourseSection>,
+    collapsedSectionIds: ImmutableSet<Int>,
     isLoading: Boolean,
     errorMessage: String?,
     token: String,
@@ -166,11 +168,14 @@ fun CourseDetailScreen(
                                     val isExpanded = !collapsedSectionIds.contains(section.id)
 
                                     item(key = "section_header_${section.id}") {
+                                        val onToggle = remember(section.id, onToggleSectionCollapsed) {
+                                            { onToggleSectionCollapsed(section.id) }
+                                        }
                                         CourseSectionHeaderItem(
                                             sectionName = section.name,
                                             moduleCount = visibleModules.size,
                                             isExpanded = isExpanded,
-                                            onToggleExpand = { onToggleSectionCollapsed(section.id) }
+                                            onToggleExpand = onToggle
                                         )
                                     }
 
@@ -220,8 +225,6 @@ private fun CourseSectionHeaderItem(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit
 ) {
-    val cleanedName = remember(sectionName) { cleanHtml(sectionName) }
-
     ElevatedCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
@@ -242,7 +245,7 @@ private fun CourseSectionHeaderItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (cleanedName.isBlank()) "Général" else cleanedName,
+                    text = if (sectionName.isBlank()) "Général" else sectionName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -270,8 +273,7 @@ private fun CourseSectionHeaderItem(
 
 @Composable
 private fun CourseSectionSummaryItem(summary: String) {
-    val cleanedSummary = remember(summary) { cleanHtml(summary) }
-    if (cleanedSummary.isBlank()) return
+    if (summary.isBlank()) return
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -281,17 +283,10 @@ private fun CourseSectionSummaryItem(summary: String) {
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Text(
-            text = cleanedSummary,
+            text = summary,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(12.dp)
         )
     }
-}
-
-private val HTML_TAG_REGEX = Regex("<[^>]*>")
-
-private fun cleanHtml(html: String): String {
-    if (!html.contains('<')) return html.trim()
-    return html.replace(HTML_TAG_REGEX, "").trim()
 }
