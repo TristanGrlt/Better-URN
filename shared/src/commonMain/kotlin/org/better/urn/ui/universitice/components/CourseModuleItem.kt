@@ -16,15 +16,20 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.better.urn.data.CourseModule
+import org.better.urn.data.ViewableFile
+import org.better.urn.data.ViewableFileType
+import org.better.urn.data.toViewableFile
 
 @Composable
 fun CourseModuleItem(
     module: CourseModule,
     token: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenFile: ((ViewableFile) -> Unit)? = null
 ) {
     val uriHandler = LocalUriHandler.current
     val primaryUrl = remember(module, token) { module.getPrimaryUrl(token) }
+    val viewableFile = remember(module, token) { module.toViewableFile(token) }
 
     if (module.modname == "label") {
         LabelModuleItem(
@@ -108,9 +113,10 @@ fun CourseModuleItem(
         },
         trailingContent = {
             if (primaryUrl != null) {
+                val isImage = viewableFile?.fileType == ViewableFileType.IMAGE
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Ouvrir",
+                    imageVector = if (isImage) Icons.Rounded.Visibility else Icons.AutoMirrored.Rounded.ArrowForward,
+                    contentDescription = if (isImage) "Aperçu de l'image" else "Ouvrir",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
@@ -124,10 +130,14 @@ fun CourseModuleItem(
             .then(
                 if (primaryUrl != null) {
                     Modifier.clickable {
-                        try {
-                            uriHandler.openUri(primaryUrl)
-                        } catch (_: Exception) {
-                            // Fallback gracefully if URL handler is not supported
+                        if (viewableFile != null && onOpenFile != null && viewableFile.fileType == ViewableFileType.IMAGE) {
+                            onOpenFile(viewableFile)
+                        } else {
+                            try {
+                                uriHandler.openUri(primaryUrl)
+                            } catch (_: Exception) {
+                                // Fallback gracefully if URL handler is not supported
+                            }
                         }
                     }
                 } else Modifier

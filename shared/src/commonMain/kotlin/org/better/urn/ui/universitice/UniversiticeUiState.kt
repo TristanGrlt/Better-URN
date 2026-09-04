@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.toImmutableList
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
 import org.better.urn.data.MoodleUser
+import org.better.urn.data.ViewableFile
 
 @Immutable
 data class UniversiticeUiState(
@@ -23,5 +24,6 @@ data class UniversiticeUiState(
     val selectedCourse: Course? = null,
     val courseSections: ImmutableList<CourseSection> = persistentListOf(),
     val collapsedSectionIds: ImmutableSet<Int> = persistentSetOf(),
-    val isLoadingCourseContent: Boolean = false
+    val isLoadingCourseContent: Boolean = false,
+    val activeFileViewer: ViewableFile? = null
 )

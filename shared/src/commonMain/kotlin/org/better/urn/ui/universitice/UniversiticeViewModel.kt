@@ -12,13 +12,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineDispatcher
+import org.better.urn.data.CourseModule
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.MoodleTokenExpiredException
 import org.better.urn.data.UserPreferences
+import org.better.urn.data.ViewableFile
 import org.better.urn.data.auth.MoodleAuthInitiator
 import org.better.urn.data.auth.MoodleAuthNormalizer
 import org.better.urn.data.auth.MoodleAuthParser
 import org.better.urn.data.auth.MoodleAuthValidator
+import org.better.urn.data.toViewableFile
 
 class UniversiticeViewModel(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main
@@ -134,11 +137,27 @@ class UniversiticeViewModel(
         }
     }
 
+    fun openFileViewer(file: ViewableFile) {
+        _uiState.value = _uiState.value.copy(activeFileViewer = file)
+    }
+
+    fun openModuleFile(module: CourseModule): Boolean {
+        val token = _uiState.value.token
+        val viewable = module.toViewableFile(token) ?: return false
+        openFileViewer(viewable)
+        return true
+    }
+
+    fun closeFileViewer() {
+        _uiState.value = _uiState.value.copy(activeFileViewer = null)
+    }
+
     fun closeCourse() {
         _uiState.value = _uiState.value.copy(
             selectedCourse = null,
             courseSections = persistentListOf(),
-            collapsedSectionIds = persistentSetOf()
+            collapsedSectionIds = persistentSetOf(),
+            activeFileViewer = null
         )
     }
 

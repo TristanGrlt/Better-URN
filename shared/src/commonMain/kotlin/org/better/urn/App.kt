@@ -1,6 +1,7 @@
 package org.better.urn
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
+import org.better.urn.ui.components.ImageViewerOverlay
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
 import org.better.urn.ui.universitice.UniversiticeScreen
@@ -75,50 +78,69 @@ fun App(
             val tabBackstack = remember { mutableStateListOf(AppScreen.UNIVERSITICE) }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
 
-            BackHandler(enabled = tabBackstack.size > 1) {
+            BackHandler(enabled = state.activeFileViewer == null && tabBackstack.size > 1) {
                 tabBackstack.removeAt(tabBackstack.lastIndex)
             }
 
-            MainLayout(
-                currentScreen = currentScreen,
-                onScreenSelected = { selected ->
-                    if (selected != currentScreen) {
-                        tabBackstack.remove(selected)
-                        tabBackstack.add(selected)
-                    } else {
-                        if (selected == AppScreen.UNIVERSITICE) {
-                            if (state.selectedCourse != null) {
-                                universiticeViewModel.closeCourse()
-                            } else if (state.searchQuery.isNotEmpty()) {
-                                universiticeViewModel.onSearchQueryChange("")
+            Box(modifier = Modifier.fillMaxSize()) {
+                MainLayout(
+                    currentScreen = currentScreen,
+                    onScreenSelected = { selected ->
+                        if (selected != currentScreen) {
+                            tabBackstack.remove(selected)
+                            tabBackstack.add(selected)
+                        } else {
+                            if (selected == AppScreen.UNIVERSITICE) {
+                                if (state.activeFileViewer != null) {
+                                    universiticeViewModel.closeFileViewer()
+                                } else if (state.selectedCourse != null) {
+                                    universiticeViewModel.closeCourse()
+                                } else if (state.searchQuery.isNotEmpty()) {
+                                    universiticeViewModel.onSearchQueryChange("")
+                                }
                             }
                         }
                     }
+                ) {
+                    when (currentScreen) {
+                        AppScreen.UNIVERSITICE -> {
+                            UniversiticeScreen(
+                                state = state,
+                                onInitiateLogin = { baseUrl -> universiticeViewModel.initiateLogin(baseUrl) },
+                                onAuthInput = { input, url -> universiticeViewModel.handleAuthInput(input, url) },
+                                onRefresh = { universiticeViewModel.refresh() },
+                                onCourseClick = { courseId -> universiticeViewModel.openCourse(courseId) },
+                                onBackClick = {
+                                    if (state.activeFileViewer != null) {
+                                        universiticeViewModel.closeFileViewer()
+                                    } else {
+                                        universiticeViewModel.closeCourse()
+                                    }
+                                },
+                                onRefreshCourse = { universiticeViewModel.refreshCurrentCourse() },
+                                onToggleSectionCollapsed = { sectionId -> universiticeViewModel.toggleSectionCollapsed(sectionId) },
+                                onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) },
+                                onOpenFile = { file -> universiticeViewModel.openFileViewer(file) }
+                            )
+                        }
+                        AppScreen.IZLY -> {
+                            Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
+                        }
+                        AppScreen.EDT -> {
+                            Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
+                        }
+                        AppScreen.AUTRE -> {
+                            Text("Autres options...", modifier = Modifier.padding(16.dp))
+                        }
+                    }
                 }
-            ) {
-                when (currentScreen) {
-                    AppScreen.UNIVERSITICE -> {
-                        UniversiticeScreen(
-                            state = state,
-                            onInitiateLogin = { baseUrl -> universiticeViewModel.initiateLogin(baseUrl) },
-                            onAuthInput = { input, url -> universiticeViewModel.handleAuthInput(input, url) },
-                            onRefresh = { universiticeViewModel.refresh() },
-                            onCourseClick = { courseId -> universiticeViewModel.openCourse(courseId) },
-                            onBackClick = { universiticeViewModel.closeCourse() },
-                            onRefreshCourse = { universiticeViewModel.refreshCurrentCourse() },
-                            onToggleSectionCollapsed = { sectionId -> universiticeViewModel.toggleSectionCollapsed(sectionId) },
-                            onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) }
-                        )
-                    }
-                    AppScreen.IZLY -> {
-                        Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
-                    }
-                    AppScreen.EDT -> {
-                        Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
-                    }
-                    AppScreen.AUTRE -> {
-                        Text("Autres options...", modifier = Modifier.padding(16.dp))
-                    }
+
+                val activeFile = state.activeFileViewer
+                if (activeFile != null && activeFile.fileType == ViewableFileType.IMAGE) {
+                    ImageViewerOverlay(
+                        file = activeFile,
+                        onClose = { universiticeViewModel.closeFileViewer() }
+                    )
                 }
             }
         }

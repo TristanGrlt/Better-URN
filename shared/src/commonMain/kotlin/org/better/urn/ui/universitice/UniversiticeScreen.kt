@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
 import org.better.urn.ui.components.M3CoursesLoadingView
@@ -35,12 +36,13 @@ fun UniversiticeScreen(
     onBackClick: () -> Unit = {},
     onRefreshCourse: () -> Unit = {},
     onToggleSectionCollapsed: (Int) -> Unit = {},
-    onSearchQueryChange: (String) -> Unit = {}
+    onSearchQueryChange: (String) -> Unit = {},
+    onOpenFile: (ViewableFile) -> Unit = {}
 ) {
     val token = state.token
 
     if (state.selectedCourse != null) {
-        BackHandler(enabled = true) {
+        BackHandler(enabled = state.activeFileViewer == null) {
             onBackClick()
         }
         CourseDetailScreen(
@@ -52,12 +54,13 @@ fun UniversiticeScreen(
             token = token,
             onBackClick = onBackClick,
             onRefresh = onRefreshCourse,
-            onToggleSectionCollapsed = onToggleSectionCollapsed
+            onToggleSectionCollapsed = onToggleSectionCollapsed,
+            onOpenFile = onOpenFile
         )
         return
     }
 
-    BackHandler(enabled = state.searchQuery.isNotEmpty()) {
+    BackHandler(enabled = state.activeFileViewer == null && state.searchQuery.isNotEmpty()) {
         onSearchQueryChange("")
     }
 

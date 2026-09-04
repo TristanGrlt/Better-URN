@@ -25,6 +25,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
+import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.M3CourseDetailLoadingView
 import org.better.urn.ui.universitice.components.CourseModuleItem
@@ -40,7 +41,8 @@ fun CourseDetailScreen(
     token: String,
     onBackClick: () -> Unit,
     onRefresh: () -> Unit,
-    onToggleSectionCollapsed: (Int) -> Unit
+    onToggleSectionCollapsed: (Int) -> Unit,
+    onOpenFile: ((ViewableFile) -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
@@ -199,7 +201,8 @@ fun CourseDetailScreen(
                                             ) {
                                                 CourseModuleItem(
                                                     module = module,
-                                                    token = token
+                                                    token = token,
+                                                    onOpenFile = onOpenFile
                                                 )
                                             }
                                         }
