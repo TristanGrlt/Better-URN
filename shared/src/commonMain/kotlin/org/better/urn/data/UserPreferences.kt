@@ -21,26 +21,31 @@ class UserPreferences {
         get() = settings.getString("moodle_token", "")
         set(value) = settings.putString("moodle_token", value)
 
-    // --- Caching ---
+    // --- Caching (File-based via CacheStorage) ---
     
     var cachedUser: MoodleUser?
-        get() = settings.getStringOrNull("cached_user")?.let { 
+        get() = CacheStorage.getString("cached_user")?.let { 
             try { json.decodeFromString(it) } catch (e: Exception) { null } 
         }
         set(value) {
-            if (value != null) settings.putString("cached_user", json.encodeToString(value))
-            else settings.remove("cached_user")
+            if (value != null) {
+                CacheStorage.saveString("cached_user", json.encodeToString(value))
+            } else {
+                CacheStorage.remove("cached_user")
+            }
         }
 
     var cachedCourses: List<Course>
-        get() = settings.getStringOrNull("cached_courses")?.let { 
+        get() = CacheStorage.getString("cached_courses")?.let { 
             try { json.decodeFromString(it) } catch (e: Exception) { emptyList() } 
         } ?: emptyList()
-        set(value) = settings.putString("cached_courses", json.encodeToString(value))
+        set(value) {
+            CacheStorage.saveString("cached_courses", json.encodeToString(value))
+        }
 
     fun getCachedCourseSections(courseId: Int): List<CourseSection> {
         val key = "cached_course_sections_$courseId"
-        return settings.getStringOrNull(key)?.let {
+        return CacheStorage.getString(key)?.let {
             try { json.decodeFromString(it) } catch (e: Exception) { emptyList() }
         } ?: emptyList()
     }
@@ -48,9 +53,9 @@ class UserPreferences {
     fun setCachedCourseSections(courseId: Int, sections: List<CourseSection>) {
         val key = "cached_course_sections_$courseId"
         try {
-            settings.putString(key, json.encodeToString(sections))
+            CacheStorage.saveString(key, json.encodeToString(sections))
         } catch (_: Exception) {
-            // Ignore cache storage overflow errors on Desktop/JVM
+            // Ignore cache write error
         }
     }
 
