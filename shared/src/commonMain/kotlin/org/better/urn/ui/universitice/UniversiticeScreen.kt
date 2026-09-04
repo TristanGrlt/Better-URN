@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import org.better.urn.data.UserPreferences
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
+import org.better.urn.ui.components.M3CoursesLoadingView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,10 +78,7 @@ fun UniversiticeScreen(
                 }
             } else {
                 if (state.isLoading && state.courses.isEmpty()) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(64.dp)
-                    )
+                    M3CoursesLoadingView()
                 } else {
                     val filteredCourses = state.filteredCourses
 

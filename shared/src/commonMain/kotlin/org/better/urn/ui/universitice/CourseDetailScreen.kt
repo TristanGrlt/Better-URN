@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
 import org.better.urn.ui.components.BetterUrnTopBar
+import org.better.urn.ui.components.M3CourseDetailLoadingView
 import org.better.urn.ui.universitice.components.CourseModuleItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,11 +96,7 @@ fun CourseDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             if (isLoading) {
-                                Text(
-                                    text = "Chargement des sections...",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                M3CourseDetailLoadingView()
                             } else if (errorMessage != null) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,

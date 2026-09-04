@@ -49,10 +49,16 @@ fun BetterUrnTopBar(
                     onClick = onRefresh,
                     enabled = !isRefreshing
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = refreshContentDescription
-                    )
+                    if (isRefreshing) {
+                        LoadingIndicator(
+                            modifier = Modifier.size(22.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = refreshContentDescription
+                        )
+                    }
                 }
             }
             actions()

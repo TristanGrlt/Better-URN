@@ -34,7 +34,34 @@ fun CourseCard(course: Course, token: String, onClick: () -> Unit) {
                     resource = asyncPainterResource(data = imageUrl),
                     contentDescription = "Image du cours",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(40.dp),
+                    onLoading = {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            LoadingIndicator(modifier = Modifier.size(24.dp))
+                        }
+                    },
+                    onFailure = {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.School,
+                                    contentDescription = "Cours",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
                 )
             } else {
                 Surface(
