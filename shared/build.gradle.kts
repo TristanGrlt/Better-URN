@@ -38,6 +38,19 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.androidx.activity.compose)
         }
+        jvmMain.dependencies {
+            val osName = System.getProperty("os.name").lowercase()
+            val javafxClassifier = when {
+                osName.contains("win") -> "win"
+                osName.contains("mac") -> "mac"
+                else -> "linux"
+            }
+            implementation("org.openjfx:javafx-controls:21.0.2:$javafxClassifier")
+            implementation("org.openjfx:javafx-media:21.0.2:$javafxClassifier")
+            implementation("org.openjfx:javafx-graphics:21.0.2:$javafxClassifier")
+            implementation("org.openjfx:javafx-base:21.0.2:$javafxClassifier")
+            implementation("org.openjfx:javafx-swing:21.0.2:$javafxClassifier")
+        }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

@@ -61,6 +61,10 @@
             pkgs.libxext
             pkgs.libxrandr
             pkgs.libxinerama
+            pkgs.gtk3
+            pkgs.glib
+            pkgs.alsa-lib
+            pkgs.ffmpeg_4
           ];
 
           shellHook = ''
@@ -68,6 +72,7 @@
             echo "Java: $JAVA_HOME"
             export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt2"
             export _JAVA_AWT_WM_NONREPARENTING=1
+            export GDK_BACKEND=x11
           '';
         };
       }

@@ -64,6 +64,35 @@ class FileViewerViewModelTest {
     }
 
     @Test
+    fun testOpenModuleFileWithValidVideo() {
+        val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
+        val module = CourseModule(
+            id = 84,
+            name = "Tutoriel Chapitre 1.mp4",
+            modname = "resource",
+            url = "https://moodle.univ.fr/mod/resource/view.php?id=84",
+            contents = listOf(
+                ModuleContent(
+                    filename = "tuto.mp4",
+                    fileurl = "https://moodle.univ.fr/webservice/pluginfile.php/84/mod_resource/content/1/tuto.mp4",
+                    mimetype = "video/mp4",
+                    filesize = 15728640
+                )
+            )
+        )
+
+        val opened = viewModel.openModuleFile(module)
+        assertTrue(opened)
+
+        val active = viewModel.uiState.value.activeFileViewer
+        assertNotNull(active)
+        assertEquals("84", active.id)
+        assertEquals("Tutoriel Chapitre 1.mp4", active.title)
+        assertEquals(ViewableFileType.VIDEO, active.fileType)
+        assertEquals("15.0 MB", active.formattedFileSize)
+    }
+
+    @Test
     fun testOpenModuleFileWithoutUrlFails() {
         val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
         val module = CourseModule(

@@ -113,10 +113,10 @@ fun CourseModuleItem(
         },
         trailingContent = {
             if (primaryUrl != null) {
-                val isImage = viewableFile?.fileType == ViewableFileType.IMAGE
+                val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE || viewableFile?.fileType == ViewableFileType.VIDEO
                 Icon(
-                    imageVector = if (isImage) Icons.Rounded.Visibility else Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = if (isImage) "Aperçu de l'image" else "Ouvrir",
+                    imageVector = if (isViewableInApp) Icons.Rounded.Visibility else Icons.AutoMirrored.Rounded.ArrowForward,
+                    contentDescription = if (isViewableInApp) "Aperçu in-app" else "Ouvrir",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
@@ -130,7 +130,8 @@ fun CourseModuleItem(
             .then(
                 if (primaryUrl != null) {
                     Modifier.clickable {
-                        if (viewableFile != null && onOpenFile != null && viewableFile.fileType == ViewableFileType.IMAGE) {
+                        val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE || viewableFile?.fileType == ViewableFileType.VIDEO
+                        if (viewableFile != null && onOpenFile != null && isViewableInApp) {
                             onOpenFile(viewableFile)
                         } else {
                             try {
