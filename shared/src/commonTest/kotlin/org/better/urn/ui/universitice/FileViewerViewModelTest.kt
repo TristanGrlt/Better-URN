@@ -93,6 +93,35 @@ class FileViewerViewModelTest {
     }
 
     @Test
+    fun testOpenModuleFileWithValidPdf() {
+        val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
+        val module = CourseModule(
+            id = 128,
+            name = "Support de cours.pdf",
+            modname = "resource",
+            url = "https://moodle.univ.fr/mod/resource/view.php?id=128",
+            contents = listOf(
+                ModuleContent(
+                    filename = "cours.pdf",
+                    fileurl = "https://moodle.univ.fr/webservice/pluginfile.php/128/mod_resource/content/1/cours.pdf",
+                    mimetype = "application/pdf",
+                    filesize = 2097152
+                )
+            )
+        )
+
+        val opened = viewModel.openModuleFile(module)
+        assertTrue(opened)
+
+        val active = viewModel.uiState.value.activeFileViewer
+        assertNotNull(active)
+        assertEquals("128", active.id)
+        assertEquals("Support de cours.pdf", active.title)
+        assertEquals(ViewableFileType.PDF, active.fileType)
+        assertEquals("2.0 MB", active.formattedFileSize)
+    }
+
+    @Test
     fun testOpenModuleFileWithoutUrlFails() {
         val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
         val module = CourseModule(

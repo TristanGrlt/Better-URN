@@ -50,6 +50,7 @@ kotlin {
             implementation("org.openjfx:javafx-graphics:21.0.2:$javafxClassifier")
             implementation("org.openjfx:javafx-base:21.0.2:$javafxClassifier")
             implementation("org.openjfx:javafx-swing:21.0.2:$javafxClassifier")
+            implementation("org.apache.pdfbox:pdfbox:3.0.8")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

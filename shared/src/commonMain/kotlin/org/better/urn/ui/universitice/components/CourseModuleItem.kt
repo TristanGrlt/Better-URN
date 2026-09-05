@@ -113,7 +113,9 @@ fun CourseModuleItem(
         },
         trailingContent = {
             if (primaryUrl != null) {
-                val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE || viewableFile?.fileType == ViewableFileType.VIDEO
+                val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE ||
+                        viewableFile?.fileType == ViewableFileType.VIDEO ||
+                        viewableFile?.fileType == ViewableFileType.PDF
                 Icon(
                     imageVector = if (isViewableInApp) Icons.Rounded.Visibility else Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = if (isViewableInApp) "Aperçu in-app" else "Ouvrir",
@@ -130,7 +132,9 @@ fun CourseModuleItem(
             .then(
                 if (primaryUrl != null) {
                     Modifier.clickable {
-                        val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE || viewableFile?.fileType == ViewableFileType.VIDEO
+                        val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE ||
+                                viewableFile?.fileType == ViewableFileType.VIDEO ||
+                                viewableFile?.fileType == ViewableFileType.PDF
                         if (viewableFile != null && onOpenFile != null && isViewableInApp) {
                             onOpenFile(viewableFile)
                         } else {
@@ -177,6 +181,7 @@ private fun getModuleIcon(modName: String, mimeType: String?): ImageVector {
             when {
                 mimeType?.contains("image") == true -> Icons.Rounded.Image
                 mimeType?.contains("video") == true -> Icons.Rounded.PlayCircle
+                mimeType?.contains("pdf") == true -> Icons.Rounded.PictureAsPdf
                 else -> Icons.Rounded.Description
             }
         }

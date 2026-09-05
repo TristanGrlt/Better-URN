@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
 import org.better.urn.ui.components.ImageViewerOverlay
+import org.better.urn.ui.components.PdfViewerOverlay
 import org.better.urn.ui.components.VideoPlayerOverlay
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
@@ -147,6 +148,12 @@ fun App(
                         }
                         ViewableFileType.VIDEO -> {
                             VideoPlayerOverlay(
+                                file = activeFile,
+                                onClose = { universiticeViewModel.closeFileViewer() }
+                            )
+                        }
+                        ViewableFileType.PDF -> {
+                            PdfViewerOverlay(
                                 file = activeFile,
                                 onClose = { universiticeViewModel.closeFileViewer() }
                             )
