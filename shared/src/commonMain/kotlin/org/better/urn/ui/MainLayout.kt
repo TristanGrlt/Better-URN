@@ -9,10 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,7 +45,7 @@ fun MainLayout(
                 Row(modifier = Modifier.fillMaxSize()) {
                     NavigationRail(
                         modifier = Modifier.fillMaxHeight(),
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        containerColor = NavigationRailDefaults.ContainerColor,
                     ) {
                         Spacer(modifier = Modifier.height(16.dp))
                         AppScreen.entries.forEach { screen ->
@@ -64,7 +65,7 @@ fun MainLayout(
                 Scaffold(
                     bottomBar = {
                         NavigationBar(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            containerColor = NavigationBarDefaults.containerColor,
                         ) {
                             AppScreen.entries.forEach { screen ->
                                 NavigationBarItem(

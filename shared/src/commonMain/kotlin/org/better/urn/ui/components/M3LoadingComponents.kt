@@ -1,7 +1,9 @@
 package org.better.urn.ui.components
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -197,9 +199,22 @@ fun M3CourseDetailLoadingView(
 
 @Composable
 private fun CourseCardSkeleton(alpha: Float) {
+    val isDark = isSystemInDarkTheme()
     Card(
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = if (isDark) {
+                MaterialTheme.colorScheme.surfaceContainerHigh
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLowest
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(
+                alpha = if (isDark) 0.25f else 0.35f
+            )
         ),
         modifier = Modifier
             .fillMaxWidth()

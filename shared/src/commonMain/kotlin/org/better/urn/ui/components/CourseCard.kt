@@ -1,7 +1,9 @@
 package org.better.urn.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.School
@@ -46,14 +48,25 @@ fun CourseCard(
     }
     var showMenu by remember { mutableStateOf(false) }
 
+    val isDark = isSystemInDarkTheme()
+
     Box(modifier = modifier) {
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = if (isHidden) {
-                    MaterialTheme.colorScheme.surfaceContainerLow
+                    if (isDark) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.surfaceContainerLow
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant
+                    if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLowest
                 }
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (isHidden) 1.dp else 2.dp
+            ),
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(
+                    alpha = if (isDark) 0.25f else 0.35f
+                )
             ),
             modifier = Modifier
                 .fillMaxWidth()

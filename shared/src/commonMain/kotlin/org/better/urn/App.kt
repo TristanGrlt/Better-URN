@@ -34,33 +34,75 @@ import org.better.urn.ui.universitice.UniversiticeScreen
 import org.better.urn.ui.universitice.UniversiticeViewModel
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF00497D),
+    primary = Color(0xFF005AC1),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF0061A4),
-    onPrimaryContainer = Color(0xFFC0DBFF),
-    secondary = Color(0xFF535F70),
+    primaryContainer = Color(0xFFD8E2FF),
+    onPrimaryContainer = Color(0xFF001A41),
+
+    secondary = Color(0xFF575E71),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFD7E3F8),
-    onSecondaryContainer = Color(0xFF596576),
-    background = Color(0xFFF9F9FC),
-    onBackground = Color(0xFF1A1C1E),
-    surface = Color(0xFFF9F9FC),
-    onSurface = Color(0xFF1A1C1E)
+    secondaryContainer = Color(0xFFDBE2F9),
+    onSecondaryContainer = Color(0xFF141B2C),
+
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+
+    background = Color(0xFFF7F9FF),
+    onBackground = Color(0xFF191C20),
+    surface = Color(0xFFF7F9FF),
+    onSurface = Color(0xFF191C20),
+
+    surfaceVariant = Color(0xFFE0E2EC),
+    onSurfaceVariant = Color(0xFF43474E),
+    outline = Color(0xFF74777F),
+    outlineVariant = Color(0xFFC4C6D0),
+    scrim = Color(0xFF000000),
+
+    surfaceDim = Color(0xFFD9D9E0),
+    surfaceBright = Color(0xFFF7F9FF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF1F3FA),
+    surfaceContainer = Color(0xFFEBEFF7),
+    surfaceContainerHigh = Color(0xFFE2E7F0),
+    surfaceContainerHighest = Color(0xFFDAE0EA)
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF9FCAFF),
-    onPrimary = Color(0xFF001D36),
-    primaryContainer = Color(0xFF00497D),
-    onPrimaryContainer = Color(0xFFD1E4FF),
-    secondary = Color(0xFFBBC7DB),
-    onSecondary = Color(0xFF101C2B),
-    secondaryContainer = Color(0xFF3C4858),
-    onSecondaryContainer = Color(0xFFD7E3F8),
-    background = Color(0xFF1A1C1E),
-    onBackground = Color(0xFFE2E2E5),
-    surface = Color(0xFF1A1C1E),
-    onSurface = Color(0xFFE2E2E5)
+    primary = Color(0xFFADC6FF),
+    onPrimary = Color(0xFF002E69),
+    primaryContainer = Color(0xFF004494),
+    onPrimaryContainer = Color(0xFFD8E2FF),
+
+    secondary = Color(0xFFBFC6DC),
+    onSecondary = Color(0xFF293041),
+    secondaryContainer = Color(0xFF3F4759),
+    onSecondaryContainer = Color(0xFFDBE2F9),
+
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+
+    background = Color(0xFF111318),
+    onBackground = Color(0xFFE2E2E9),
+    surface = Color(0xFF111318),
+    onSurface = Color(0xFFE2E2E9),
+
+    surfaceVariant = Color(0xFF43474E),
+    onSurfaceVariant = Color(0xFFC4C6D0),
+    outline = Color(0xFF8E9099),
+    outlineVariant = Color(0xFF43474E),
+    scrim = Color(0xFF000000),
+
+    surfaceDim = Color(0xFF111318),
+    surfaceBright = Color(0xFF37393E),
+    surfaceContainerLowest = Color(0xFF0C0E12),
+    surfaceContainerLow = Color(0xFF191C21),
+    surfaceContainer = Color(0xFF1F2228),
+    surfaceContainerHigh = Color(0xFF292C33),
+    surfaceContainerHighest = Color(0xFF343740)
 )
 
 @Composable
