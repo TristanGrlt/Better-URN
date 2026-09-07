@@ -53,7 +53,7 @@ class PdfViewerStateTest {
         assertEquals(1.0f, state.zoom)
 
         state.zoomIn()
-        assertEquals(1.25f, state.zoom)
+        assertEquals(1.10f, state.zoom)
 
         state.zoomOut()
         assertEquals(1.0f, state.zoom)
@@ -122,5 +122,50 @@ class PdfViewerStateTest {
         assertEquals(90f, restored.rotationAngle)
         assertEquals(PdfFitMode.FIT_WIDTH, restored.fitMode)
         assertTrue(restored.isGridVisible)
+    }
+
+    @Test
+    fun testZoomOutBelow100Percent() {
+        val state = PdfViewerState()
+        assertEquals(1.0f, state.zoom)
+
+        state.zoomOut()
+        assertEquals(0.90f, state.zoom)
+
+        state.zoomOut()
+        assertEquals(0.80f, state.zoom)
+
+        state.setZoomLevel(0.35f)
+        assertEquals(0.35f, state.zoom)
+
+        state.setZoomLevel(0.10f)
+        assertEquals(PdfViewerState.MIN_ZOOM, state.zoom)
+
+        state.resetZoom()
+        assertEquals(1.0f, state.zoom)
+    }
+
+    @Test
+    fun testZoomAndPageNavigationIntegration() {
+        val state = PdfViewerState()
+        state.updatePageCount(10)
+
+        // Zoom out to 50%
+        state.setZoomLevel(0.5f)
+        assertEquals(0.5f, state.zoom)
+
+        assertTrue(state.nextPage())
+        assertEquals(2, state.currentPage)
+        assertEquals(0.5f, state.zoom)
+
+        assertTrue(state.goToPage(8))
+        assertEquals(8, state.currentPage)
+        assertEquals(0.5f, state.zoom)
+
+        state.rotateClockwise()
+        state.resetView()
+        assertEquals(1.0f, state.zoom)
+        assertEquals(0f, state.rotationAngle)
+        assertEquals(8, state.currentPage)
     }
 }

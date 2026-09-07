@@ -17,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -80,11 +79,11 @@ fun ImageViewerOverlay(
                             true
                         }
                         Key.Equals, Key.Plus, Key.DirectionUp -> {
-                            zoom = (zoom + 0.25f).coerceAtMost(5f)
+                            zoom = (zoom + 0.10f).coerceAtMost(5f)
                             true
                         }
                         Key.Minus, Key.DirectionDown -> {
-                            zoom = (zoom - 0.25f).coerceAtLeast(0.5f)
+                            zoom = (zoom - 0.10f).coerceAtLeast(0.25f)
                             if (zoom <= 1f) pan = Offset.Zero
                             true
                         }
@@ -121,8 +120,8 @@ fun ImageViewerOverlay(
                                 val change = event.changes.firstOrNull()
                                 if (change != null) {
                                     val scrollDelta = change.scrollDelta.y
-                                    val zoomFactor = if (scrollDelta < 0) 1.15f else 0.85f
-                                    val newZoom = (zoom * zoomFactor).coerceIn(0.5f, 5f)
+                                    val zoomFactor = if (scrollDelta < 0) 1.05f else 0.95f
+                                    val newZoom = (zoom * zoomFactor).coerceIn(0.25f, 5f)
                                     zoom = newZoom
                                     if (newZoom <= 1f) pan = Offset.Zero
                                     change.consume()
@@ -145,7 +144,7 @@ fun ImageViewerOverlay(
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, panAmount, zoomAmount, rotationChange ->
-                        val newZoom = (zoom * zoomAmount).coerceIn(0.5f, 5f)
+                        val newZoom = (zoom * zoomAmount).coerceIn(0.25f, 5f)
                         zoom = newZoom
                         rotationAngle += rotationChange
                         if (newZoom > 1f) {
@@ -317,15 +316,15 @@ fun ImageViewerOverlay(
             ) {
                 IconButton(
                     onClick = {
-                        zoom = (zoom - 0.25f).coerceAtLeast(0.5f)
+                        zoom = (zoom - 0.10f).coerceAtLeast(0.25f)
                         if (zoom <= 1f) pan = Offset.Zero
                     },
-                    enabled = zoom > 0.5f
+                    enabled = zoom > 0.25f
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ZoomOut,
                         contentDescription = "Dézoomer",
-                        tint = if (zoom > 0.5f) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        tint = if (zoom > 0.25f) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     )
                 }
 
@@ -339,7 +338,7 @@ fun ImageViewerOverlay(
 
                 IconButton(
                     onClick = {
-                        zoom = (zoom + 0.25f).coerceAtMost(5f)
+                        zoom = (zoom + 0.10f).coerceAtMost(5f)
                     },
                     enabled = zoom < 5f
                 ) {

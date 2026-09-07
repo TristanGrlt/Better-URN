@@ -100,7 +100,8 @@ class PdfViewerState(
      * Increases zoom by a fixed step up to MAX_ZOOM.
      */
     fun zoomIn(): Float {
-        zoom = (zoom + ZOOM_STEP).coerceAtMost(MAX_ZOOM)
+        val target = zoom + ZOOM_STEP
+        zoom = (kotlin.math.round(target * 100f) / 100f).coerceAtMost(MAX_ZOOM)
         return zoom
     }
 
@@ -108,7 +109,8 @@ class PdfViewerState(
      * Decreases zoom by a fixed step down to MIN_ZOOM.
      */
     fun zoomOut(): Float {
-        zoom = (zoom - ZOOM_STEP).coerceAtLeast(MIN_ZOOM)
+        val target = zoom - ZOOM_STEP
+        zoom = (kotlin.math.round(target * 100f) / 100f).coerceAtLeast(MIN_ZOOM)
         return zoom
     }
 
@@ -163,9 +165,9 @@ class PdfViewerState(
     }
 
     companion object {
-        const val MIN_ZOOM = 0.5f
+        const val MIN_ZOOM = 0.25f
         const val MAX_ZOOM = 5.0f
-        const val ZOOM_STEP = 0.25f
+        const val ZOOM_STEP = 0.10f
 
         val Saver: Saver<PdfViewerState, Any> = listSaver(
             save = { state ->

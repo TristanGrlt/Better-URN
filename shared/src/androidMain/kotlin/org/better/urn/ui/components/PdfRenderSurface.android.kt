@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color as AndroidColor
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -15,19 +16,17 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.better.urn.data.AndroidContextProvider
 import java.io.File
@@ -41,12 +40,17 @@ actual fun PdfRenderSurface(
     onError: (String?) -> Unit,
     modifier: Modifier
 ) {
-    var pan by remember { mutableStateOf(Offset.Zero) }
+    var panX by remember { mutableFloatStateOf(0f) }
+    var panY by remember { mutableFloatStateOf(0f) }
+
     var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
     var fileDescriptor by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
-    val pageBitmaps = remember { mutableStateMapOf<Int, ImageBitmap>() }
 
+    val rendererMutex = remember { Mutex() }
     val lazyListState = rememberLazyListState()
+
+    // Bounded LRU cache holding up to 16 page bitmaps to accommodate zoomed-out multi-page views safely
+    val lruCache = remember { LruCache<Int, Bitmap>(16) }
 
     // Sync current page state with lazy list scroll
     LaunchedEffect(lazyListState) {
@@ -55,9 +59,9 @@ actual fun PdfRenderSurface(
         }
     }
 
-    // Scroll list when state.currentPage changes programmatically
+    // Scroll list when state.currentPage changes programmatically (prevents scroll feedback loop)
     LaunchedEffect(state.currentPage) {
-        if (state.pageCount > 0) {
+        if (state.pageCount > 0 && !lazyListState.isScrollInProgress) {
             val targetIndex = (state.currentPage - 1).coerceIn(0, state.pageCount - 1)
             if (lazyListState.firstVisibleItemIndex != targetIndex) {
                 lazyListState.animateScrollToItem(targetIndex)
@@ -102,7 +106,7 @@ actual fun PdfRenderSurface(
             fileDescriptor = pfd
             pdfRenderer = renderer
 
-            pageBitmaps.clear()
+            lruCache.evictAll()
             state.updatePageCount(renderer.pageCount)
             onLoadingStateChanged(false)
         } catch (e: Exception) {
@@ -113,7 +117,7 @@ actual fun PdfRenderSurface(
 
     DisposableEffect(url) {
         onDispose {
-            pageBitmaps.clear()
+            lruCache.evictAll()
             pdfRenderer?.close()
             fileDescriptor?.close()
         }
@@ -121,12 +125,15 @@ actual fun PdfRenderSurface(
 
     // Clear bitmap cache on scale or mode change
     LaunchedEffect(state.fitMode) {
-        pageBitmaps.clear()
+        lruCache.evictAll()
     }
 
-    // Reset pan when page changes
+    // Reset pan when zoom returns to <= 1f or page changes
     LaunchedEffect(state.currentPage) {
-        if (state.zoom <= 1f) pan = Offset.Zero
+        if (state.zoom <= 1f) {
+            panX = 0f
+            panY = 0f
+        }
     }
 
     Box(
@@ -135,34 +142,12 @@ actual fun PdfRenderSurface(
             .fillMaxSize()
             .background(Color.DarkGray.copy(alpha = 0.5f))
             .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Main)
-                        if (event.type == PointerEventType.Scroll) {
-                            val isCtrlOrMeta = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
-                            if (isCtrlOrMeta) {
-                                val change = event.changes.firstOrNull()
-                                if (change != null) {
-                                    val scrollDelta = change.scrollDelta.y
-                                    if (scrollDelta < 0) {
-                                        state.zoomIn()
-                                    } else {
-                                        state.zoomOut()
-                                        if (state.zoom <= 1f) pan = Offset.Zero
-                                    }
-                                    change.consume()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
                         if (state.zoom > 1.2f) {
                             state.resetZoom()
-                            pan = Offset.Zero
+                            panX = 0f
+                            panY = 0f
                         } else {
                             state.setZoomLevel(2.5f)
                         }
@@ -171,82 +156,127 @@ actual fun PdfRenderSurface(
             }
             .pointerInput(Unit) {
                 detectTransformGestures { _, panAmount, zoomAmount, _ ->
-                    val newZoom = (state.zoom * zoomAmount).coerceIn(
-                        PdfViewerState.MIN_ZOOM,
-                        PdfViewerState.MAX_ZOOM
-                    )
-                    state.setZoomLevel(newZoom)
-                    if (newZoom > 1f) {
-                        pan += panAmount
+                    if (zoomAmount != 1f) {
+                        val newZoom = (state.zoom * zoomAmount).coerceIn(
+                            PdfViewerState.MIN_ZOOM,
+                            PdfViewerState.MAX_ZOOM
+                        )
+                        state.setZoomLevel(newZoom)
+                    }
+                    if (state.zoom > 1f) {
+                        panX += panAmount.x
+                        panY += panAmount.y
                     } else {
-                        pan = Offset.Zero
+                        panX = 0f
+                        panY = 0f
                     }
                 }
             }
     ) {
         val renderer = pdfRenderer
         if (renderer != null && state.pageCount > 0) {
-            LazyColumn(
-                state = lazyListState,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 64.dp, bottom = 96.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = state.zoom
-                        scaleY = state.zoom
-                        translationX = pan.x
-                        translationY = pan.y
-                        rotationZ = state.rotationAngle
-                    }
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(
-                    count = state.pageCount,
-                    key = { index -> "pdf_page_$index" }
-                ) { pageIndex ->
-                    var bitmap by remember(pageIndex, state.fitMode) { mutableStateOf(pageBitmaps[pageIndex]) }
+                val density = LocalDensity.current
+                val containerWidth = maxWidth
+                val containerHeight = maxHeight
+                val containerWidthPx = with(density) { containerWidth.toPx() }.toInt()
 
-                    LaunchedEffect(pageIndex, state.fitMode) {
-                        if (bitmap == null) {
-                            val context = AndroidContextProvider.context ?: return@LaunchedEffect
-                            val rendered = withContext(Dispatchers.Default) {
-                                synchronized(renderer) {
-                                    val page = renderer.openPage(pageIndex)
-                                    val density = context.resources.displayMetrics.density
-                                    val scale = if (state.fitMode == PdfFitMode.FIT_WIDTH) density * 2.2f else density * 1.8f
-                                    val width = (page.width * scale).toInt().coerceAtLeast(1)
-                                    val height = (page.height * scale).toInt().coerceAtLeast(1)
+                LazyColumn(
+                    state = lazyListState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(top = 64.dp, bottom = 96.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(
+                        count = state.pageCount,
+                        key = { index -> "pdf_page_$index" }
+                    ) { pageIndex ->
+                        var bitmap by remember(pageIndex, state.fitMode) { mutableStateOf<ImageBitmap?>(null) }
 
-                                    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                                    bmp.eraseColor(AndroidColor.WHITE)
-                                    page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                                    page.close()
-                                    bmp.asImageBitmap()
+                        LaunchedEffect(pageIndex, state.fitMode, containerWidthPx) {
+                            val cached = lruCache.get(pageIndex)
+                            if (cached != null && !cached.isRecycled) {
+                                bitmap = cached.asImageBitmap()
+                            } else {
+                                val rendered = withContext(Dispatchers.Default) {
+                                    rendererMutex.withLock {
+                                        // Double check cache inside lock
+                                        val existing = lruCache.get(pageIndex)
+                                        if (existing != null && !existing.isRecycled) {
+                                            return@withLock existing.asImageBitmap()
+                                        }
+
+                                        val page = renderer.openPage(pageIndex)
+                                        val pageAspect = page.height.toFloat() / page.width.toFloat()
+
+                                        // Render page targeting exact screen container pixels (bounded to safe GPU texture max 2048px)
+                                        val targetWidthPx = containerWidthPx.coerceIn(300, 2048)
+                                        val targetHeightPx = (targetWidthPx * pageAspect).toInt().coerceIn(300, 2048)
+
+                                        val bmp = Bitmap.createBitmap(targetWidthPx, targetHeightPx, Bitmap.Config.ARGB_8888)
+                                        bmp.eraseColor(AndroidColor.WHITE)
+                                        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                        page.close()
+
+                                        lruCache.put(pageIndex, bmp)
+                                        bmp.asImageBitmap()
+                                    }
                                 }
+                                bitmap = rendered
                             }
-                            bitmap = rendered
-                            pageBitmaps[pageIndex] = rendered
                         }
-                    }
 
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
                         val currentBmp = bitmap
                         if (currentBmp != null) {
-                            Image(
-                                bitmap = currentBmp,
-                                contentDescription = "Page ${pageIndex + 1}",
-                                contentScale = if (state.fitMode == PdfFitMode.FIT_WIDTH) ContentScale.FillWidth else ContentScale.Fit,
-                                modifier = if (state.fitMode == PdfFitMode.FIT_WIDTH) {
-                                    Modifier.fillMaxWidth()
-                                } else {
-                                    Modifier.wrapContentSize()
+                            val bmpWidth = currentBmp.width.toFloat()
+                            val bmpHeight = currentBmp.height.toFloat()
+                            val aspectRatio = if (bmpWidth > 0f) bmpHeight / bmpWidth else 1.414f
+
+                            val baseWidth = if (state.fitMode == PdfFitMode.FIT_WIDTH) {
+                                (containerWidth - 32.dp).coerceAtLeast(100.dp)
+                            } else {
+                                val fitHeight = (containerHeight - 128.dp).coerceAtLeast(200.dp)
+                                val widthFromHeight = fitHeight / aspectRatio
+                                minOf(containerWidth - 32.dp, widthFromHeight).coerceAtLeast(100.dp)
+                            }
+                            val baseHeight = baseWidth * aspectRatio
+
+                            val isRotated90 = (state.rotationAngle.toInt() % 180 != 0)
+                            val layoutBaseWidth = if (isRotated90) baseHeight else baseWidth
+                            val layoutBaseHeight = if (isRotated90) baseWidth else baseHeight
+
+                            val scaledWidth = layoutBaseWidth * state.zoom
+                            val scaledHeight = layoutBaseHeight * state.zoom
+
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .requiredSize(scaledWidth, scaledHeight)
+                                        .graphicsLayer {
+                                            if (state.zoom > 1f) {
+                                                translationX = panX
+                                                translationY = panY
+                                            }
+                                            rotationZ = state.rotationAngle
+                                        }
+                                ) {
+                                    Image(
+                                        bitmap = currentBmp,
+                                        contentDescription = "Page ${pageIndex + 1}",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
                                 }
-                            )
+                            }
                         } else {
                             Box(
                                 contentAlignment = Alignment.Center,
