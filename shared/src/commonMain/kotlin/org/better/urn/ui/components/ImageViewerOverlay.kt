@@ -156,10 +156,20 @@ fun ImageViewerOverlay(
                     }
                 }
         ) {
+            val imageResource: Any = remember(file.url) {
+                if (file.url.startsWith("http://") || file.url.startsWith("https://")) {
+                    file.url
+                } else {
+                    val cleanPath = file.url.removePrefix("file:")
+                    val localFile = java.io.File(cleanPath)
+                    if (localFile.exists()) localFile else file.url
+                }
+            }
             KamelImage(
-                resource = asyncPainterResource(data = file.url),
+                resource = asyncPainterResource(data = imageResource),
                 contentDescription = file.title,
                 contentScale = ContentScale.Fit,
+
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {

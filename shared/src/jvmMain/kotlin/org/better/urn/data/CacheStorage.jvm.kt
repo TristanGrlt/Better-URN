@@ -31,9 +31,23 @@ actual object CacheStorage {
             return dir
         }
 
+    private val imageCacheDir: File
+        get() {
+            val dir = File(cacheDir, "image_cache")
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            return dir
+        }
+
     private fun getFileForKey(key: String): File {
         val safeFileName = key.replace(Regex("[^a-zA-Z0-9._-]"), "_") + ".json"
         return File(cacheDir, safeFileName)
+    }
+
+    private fun getFileForImageKey(key: String): File {
+        val safeFileName = key.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        return File(imageCacheDir, safeFileName)
     }
 
     actual fun saveString(key: String, content: String) {
@@ -59,11 +73,40 @@ actual object CacheStorage {
         }
     }
 
+    actual fun saveBytes(key: String, bytes: ByteArray): String? {
+        return try {
+            val file = getFileForImageKey(key)
+            file.writeBytes(bytes)
+            file.absolutePath
+        } catch (e: Exception) {
+            println("CacheStorage JVM saveBytes Error: ${e.message}")
+            null
+        }
+    }
+
+    actual fun getFilePath(key: String): String? {
+        return try {
+            val file = getFileForImageKey(key)
+            if (file.exists() && file.length() > 0) {
+                file.absolutePath
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("CacheStorage JVM getFilePath Error: ${e.message}")
+            null
+        }
+    }
+
     actual fun remove(key: String) {
         try {
             val file = getFileForKey(key)
             if (file.exists()) {
                 file.delete()
+            }
+            val imgFile = getFileForImageKey(key)
+            if (imgFile.exists()) {
+                imgFile.delete()
             }
         } catch (e: Exception) {
             println("CacheStorage JVM remove Error: ${e.message}")
@@ -75,8 +118,12 @@ actual object CacheStorage {
             cacheDir.listFiles()?.forEach { file ->
                 if (file.isFile) file.delete()
             }
+            imageCacheDir.listFiles()?.forEach { file ->
+                if (file.isFile) file.delete()
+            }
         } catch (e: Exception) {
             println("CacheStorage JVM clear Error: ${e.message}")
         }
     }
 }
+

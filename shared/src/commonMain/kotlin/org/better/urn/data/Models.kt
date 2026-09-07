@@ -35,8 +35,20 @@ data class Course(
     }
 
     fun withResolvedImageUrl(token: String): Course {
-        return copy(imageUrl = getImageUrl(token))
+        val currentImg = imageUrl
+        if (currentImg != null && !currentImg.startsWith("http://") && !currentImg.startsWith("https://")) {
+            val cleanPath = currentImg.removePrefix("file:")
+            if (java.io.File(cleanPath).exists()) {
+                return copy(imageUrl = cleanPath)
+            }
+        }
+        val fileUrl = overviewfiles.firstOrNull()?.fileurl ?: currentImg ?: return this
+        val rawUrl = if (fileUrl.contains("?") || token.isBlank()) fileUrl else "$fileUrl?token=$token"
+        val cachedLocalPath = CourseImageCache.getCachedImagePath(id, rawUrl)
+        return copy(imageUrl = cachedLocalPath ?: rawUrl)
     }
+
+
 }
 
 @Immutable

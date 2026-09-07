@@ -356,6 +356,11 @@ class UniversiticeViewModel(
                 token = token
             )
 
+            if (token.isNotBlank() && processedCachedCourses.isNotEmpty()) {
+                preloadCourseImages(MoodleClient(url, token), processedCachedCourses, token)
+            }
+
+
             try {
                 val client = MoodleClient(url, token)
                 val fetchedUser = client.getUserProfile()
@@ -388,6 +393,8 @@ class UniversiticeViewModel(
                     isLoading = false,
                     errorMessage = null
                 )
+
+                preloadCourseImages(client, processedCourses, token)
             } catch (e: MoodleTokenExpiredException) {
                 handleTokenExpiration(e.message)
             } catch (e: Exception) {
@@ -415,4 +422,40 @@ class UniversiticeViewModel(
             }
         }
     }
+
+    private fun preloadCourseImages(client: MoodleClient, courses: List<org.better.urn.data.Course>, token: String) {
+        scope.launch(Dispatchers.Default) {
+            var anyUpdated = false
+            val updatedList = courses.map { course ->
+                val fileUrl = course.overviewfiles.firstOrNull()?.fileurl
+                val rawUrl = if (fileUrl != null) {
+                    if (token.isBlank() || fileUrl.contains("token=")) fileUrl
+                    else if (fileUrl.contains("?")) "$fileUrl&token=$token"
+                    else "$fileUrl?token=$token"
+                } else course.imageUrl ?: return@map course
+
+                if (!rawUrl.startsWith("file:") && !rawUrl.startsWith("content:")) {
+                    val resolvedUri = org.better.urn.data.CourseImageCache.getOrFetchCourseImage(course.id, rawUrl, client)
+                    if (resolvedUri != rawUrl) {
+                        anyUpdated = true
+                        course.copy(imageUrl = resolvedUri)
+                    } else course
+                } else course
+            }
+
+            if (anyUpdated) {
+                preferences.cachedCourses = updatedList
+                val currentCourses = _uiState.value.courses
+                val mergedCourses = currentCourses.map { existing ->
+                    updatedList.find { it.id == existing.id } ?: existing
+                }.toImmutableList()
+                val filtered = filterCourses(mergedCourses, _uiState.value.searchQuery).toImmutableList()
+                _uiState.value = _uiState.value.copy(
+                    courses = mergedCourses,
+                    filteredCourses = filtered
+                )
+            }
+        }
+    }
 }
+

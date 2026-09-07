@@ -128,5 +128,30 @@ class MoodleClient(baseUrl: String, private val token: String) {
 
         checkMoodleError(responseText)
     }
+
+    /**
+     * Downloads raw bytes from an image or resource URL.
+     */
+    suspend fun downloadBytes(url: String): ByteArray? {
+        return try {
+            val response = sharedClient.get(url) {
+                headers.append(HttpHeaders.UserAgent, "Mozilla/5.0 (BetterURN)")
+            }
+            if (response.status.isSuccess()) {
+                val contentType = response.contentType()
+                if (contentType?.match(ContentType.Text.Html) == true) {
+                    null
+                } else {
+                    response.body<ByteArray>()
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("MoodleClient downloadBytes error: ${e.message}")
+            null
+        }
+    }
 }
+
 

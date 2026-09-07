@@ -34,6 +34,16 @@ fun CourseCard(
     isHidden: Boolean = false,
 ) {
     val imageUrl = course.imageUrl ?: course.getImageUrl(token)
+    val imageResource: Any? = remember(imageUrl) {
+        val url = imageUrl ?: return@remember null
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            url
+        } else {
+            val cleanPath = url.removePrefix("file:")
+            val file = java.io.File(cleanPath)
+            if (file.exists()) file else null
+        }
+    }
     var showMenu by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
@@ -74,12 +84,13 @@ fun CourseCard(
             Column(
                 modifier = Modifier.padding(16.dp).fillMaxSize()
             ) {
-                if (imageUrl != null) {
+                if (imageResource != null) {
                     KamelImage(
-                        resource = asyncPainterResource(data = imageUrl),
+                        resource = asyncPainterResource(data = imageResource),
                         contentDescription = "Image du cours",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(40.dp),
+
                         onLoading = {
                             Box(
                                 contentAlignment = Alignment.Center,
