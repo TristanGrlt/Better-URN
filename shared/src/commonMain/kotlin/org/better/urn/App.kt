@@ -16,13 +16,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.better.urn.data.ViewableFile
 import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
 import org.better.urn.ui.components.ImageViewerOverlay
+import org.better.urn.ui.components.M3DownloadNotificationBanner
 import org.better.urn.ui.components.PdfViewerOverlay
 import org.better.urn.ui.components.VideoPlayerOverlay
 import org.better.urn.ui.navigation.AppScreen
@@ -137,7 +140,8 @@ fun App(
                                 onRefreshCourse = { universiticeViewModel.refreshCurrentCourse() },
                                 onToggleSectionCollapsed = { sectionId -> universiticeViewModel.toggleSectionCollapsed(sectionId) },
                                 onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) },
-                                onOpenFile = { file -> universiticeViewModel.openFileViewer(file) }
+                                onOpenFile = { file -> universiticeViewModel.openFileViewer(file) },
+                                onDownloadFile = { file -> universiticeViewModel.downloadFile(file) }
                             )
                         }
                         AppScreen.IZLY -> {
@@ -154,28 +158,51 @@ fun App(
 
                 val activeFile = state.activeFileViewer
                 if (activeFile != null) {
+                    val onDownload = { file: ViewableFile ->
+                        universiticeViewModel.downloadFile(file)
+                    }
                     when (activeFile.fileType) {
                         ViewableFileType.IMAGE -> {
                             ImageViewerOverlay(
                                 file = activeFile,
-                                onClose = { universiticeViewModel.closeFileViewer() }
+                                onClose = { universiticeViewModel.closeFileViewer() },
+                                onDownloadFile = onDownload
                             )
                         }
                         ViewableFileType.VIDEO -> {
                             VideoPlayerOverlay(
                                 file = activeFile,
-                                onClose = { universiticeViewModel.closeFileViewer() }
+                                onClose = { universiticeViewModel.closeFileViewer() },
+                                onDownloadFile = onDownload
                             )
                         }
                         ViewableFileType.PDF -> {
                             PdfViewerOverlay(
                                 file = activeFile,
-                                onClose = { universiticeViewModel.closeFileViewer() }
+                                onClose = { universiticeViewModel.closeFileViewer() },
+                                onDownloadFile = onDownload
                             )
                         }
                         else -> {
                             // Other file types are handled externally
                         }
+                    }
+                }
+
+                val downloadState = state.downloadState
+                if (downloadState != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        M3DownloadNotificationBanner(
+                            downloadState = downloadState,
+                            onOpenClick = { universiticeViewModel.openDownloadedFile() },
+                            onDismissClick = { universiticeViewModel.dismissDownloadNotification() },
+                            onRetryClick = { universiticeViewModel.downloadFile(downloadState.file) }
+                        )
                     }
                 }
             }

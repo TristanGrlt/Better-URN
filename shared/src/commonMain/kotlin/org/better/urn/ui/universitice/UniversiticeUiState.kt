@@ -8,6 +8,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
+import org.better.urn.data.DownloadState
 import org.better.urn.data.MoodleUser
 import org.better.urn.data.ViewableFile
 
@@ -25,5 +26,6 @@ data class UniversiticeUiState(
     val courseSections: ImmutableList<CourseSection> = persistentListOf(),
     val collapsedSectionIds: ImmutableSet<Int> = persistentSetOf(),
     val isLoadingCourseContent: Boolean = false,
-    val activeFileViewer: ViewableFile? = null
+    val activeFileViewer: ViewableFile? = null,
+    val downloadState: DownloadState? = null
 )

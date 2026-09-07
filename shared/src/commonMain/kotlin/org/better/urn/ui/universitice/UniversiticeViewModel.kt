@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.better.urn.data.CourseModule
+import org.better.urn.data.FileDownloader
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.MoodleTokenExpiredException
 import org.better.urn.data.UserPreferences
@@ -22,10 +23,12 @@ import org.better.urn.data.auth.MoodleAuthInitiator
 import org.better.urn.data.auth.MoodleAuthNormalizer
 import org.better.urn.data.auth.MoodleAuthParser
 import org.better.urn.data.auth.MoodleAuthValidator
+import org.better.urn.data.createPlatformFileDownloader
 import org.better.urn.data.toViewableFile
 
 class UniversiticeViewModel(
-    mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val downloader: FileDownloader = createPlatformFileDownloader()
 ) : ViewModel() {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(mainDispatcher)
@@ -44,6 +47,33 @@ class UniversiticeViewModel(
         if (currentToken.isNotBlank()) {
             fetchData(currentUrl, currentToken)
         }
+    }
+
+    /**
+     * Initiates direct downloading for a [file] with real-time state tracking.
+     */
+    fun downloadFile(file: ViewableFile) {
+        scope.launch {
+            downloader.downloadFile(file).collect { downloadState ->
+                _uiState.value = _uiState.value.copy(downloadState = downloadState)
+            }
+        }
+    }
+
+    /**
+     * Opens the completed download file using platform file viewer.
+     */
+    fun openDownloadedFile() {
+        val currentDownload = _uiState.value.downloadState ?: return
+        val path = currentDownload.filePath ?: return
+        downloader.openFile(path, currentDownload.file.mimeType)
+    }
+
+    /**
+     * Dismisses the active in-app download banner.
+     */
+    fun dismissDownloadNotification() {
+        _uiState.value = _uiState.value.copy(downloadState = null)
     }
 
     /**
@@ -145,8 +175,20 @@ class UniversiticeViewModel(
     fun openModuleFile(module: CourseModule): Boolean {
         val token = _uiState.value.token
         val viewable = module.toViewableFile(token) ?: return false
-        openFileViewer(viewable)
-        return true
+        val isDownloadable = !viewable.isViewableInApp &&
+                module.modname != "forum" &&
+                module.modname != "url" &&
+                module.modname != "page" &&
+                module.modname != "quiz"
+
+        if (viewable.isViewableInApp) {
+            openFileViewer(viewable)
+            return true
+        } else if (isDownloadable) {
+            downloadFile(viewable)
+            return true
+        }
+        return false
     }
 
     fun closeFileViewer() {

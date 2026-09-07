@@ -44,7 +44,8 @@ import org.better.urn.ui.navigation.BackHandler
 fun ImageViewerOverlay(
     file: ViewableFile,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDownloadFile: ((ViewableFile) -> Unit)? = null
 ) {
     BackHandler(enabled = true) {
         onClose()
@@ -270,15 +271,19 @@ fun ImageViewerOverlay(
                 }
                 IconButton(
                     onClick = {
-                        try {
-                            uriHandler.openUri(file.url)
-                        } catch (_: Exception) {
+                        if (onDownloadFile != null) {
+                            onDownloadFile(file)
+                        } else {
+                            try {
+                                uriHandler.openUri(file.url)
+                            } catch (_: Exception) {
+                            }
                         }
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                        contentDescription = "Ouvrir dans un navigateur externe",
+                        imageVector = if (onDownloadFile != null) Icons.Rounded.Download else Icons.AutoMirrored.Rounded.OpenInNew,
+                        contentDescription = if (onDownloadFile != null) "Télécharger le fichier" else "Ouvrir dans un navigateur externe",
                         tint = Color.White
                     )
                 }

@@ -41,7 +41,8 @@ fun UniversiticeScreen(
     onRefreshCourse: () -> Unit = {},
     onToggleSectionCollapsed: (Int) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
-    onOpenFile: (ViewableFile) -> Unit = {}
+    onOpenFile: (ViewableFile) -> Unit = {},
+    onDownloadFile: (ViewableFile) -> Unit = {}
 ) {
     val token = state.token
     val coroutineScope = rememberCoroutineScope()
@@ -61,7 +62,9 @@ fun UniversiticeScreen(
             onBackClick = onBackClick,
             onRefresh = onRefreshCourse,
             onToggleSectionCollapsed = onToggleSectionCollapsed,
-            onOpenFile = onOpenFile
+            onOpenFile = onOpenFile,
+            onDownloadFile = onDownloadFile,
+            downloadState = state.downloadState
         )
         return
     }

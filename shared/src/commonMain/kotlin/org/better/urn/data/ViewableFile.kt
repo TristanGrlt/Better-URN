@@ -23,4 +23,12 @@ data class ViewableFile(
     val mimeType: String? = null,
     val formattedFileSize: String? = null,
     val fileType: ViewableFileType = FileTypeUtils.detectType(title, mimeType)
-)
+) {
+    /**
+     * Determines whether this file can be previewed directly inside the application UI.
+     */
+    val isViewableInApp: Boolean
+        get() = fileType == ViewableFileType.IMAGE ||
+                fileType == ViewableFileType.PDF ||
+                fileType == ViewableFileType.VIDEO
+}

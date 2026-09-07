@@ -1,12 +1,35 @@
 package org.better.urn.ui.universitice.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.InsertDriveFile
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -16,8 +39,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.better.urn.data.CourseModule
+import org.better.urn.data.DownloadState
+import org.better.urn.data.DownloadStatus
 import org.better.urn.data.ViewableFile
-import org.better.urn.data.ViewableFileType
 import org.better.urn.data.toViewableFile
 
 @Composable
@@ -25,7 +49,9 @@ fun CourseModuleItem(
     module: CourseModule,
     token: String,
     modifier: Modifier = Modifier,
-    onOpenFile: ((ViewableFile) -> Unit)? = null
+    onOpenFile: ((ViewableFile) -> Unit)? = null,
+    onDownloadFile: ((ViewableFile) -> Unit)? = null,
+    downloadState: DownloadState? = null
 ) {
     val uriHandler = LocalUriHandler.current
     val primaryUrl = remember(module, token) { module.getPrimaryUrl(token) }
@@ -62,6 +88,18 @@ fun CourseModuleItem(
     val cleanedName = module.name
     val cleanedDescription = module.description?.takeIf { it.isNotBlank() }
     val hasSupporting = subtitle.isNotBlank() || cleanedDescription != null
+
+    val isViewableInApp = viewableFile?.isViewableInApp == true
+    val isDownloadable = viewableFile != null &&
+            !isViewableInApp &&
+            module.modname != "forum" &&
+            module.modname != "url" &&
+            module.modname != "page" &&
+            module.modname != "quiz"
+
+    val isDownloadingThisFile = viewableFile != null &&
+            downloadState?.file?.id == viewableFile.id &&
+            downloadState.status == DownloadStatus.DOWNLOADING
 
     ListItem(
         headlineContent = {
@@ -112,13 +150,43 @@ fun CourseModuleItem(
             }
         },
         trailingContent = {
-            if (primaryUrl != null) {
-                val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE ||
-                        viewableFile?.fileType == ViewableFileType.VIDEO ||
-                        viewableFile?.fileType == ViewableFileType.PDF
+            if (isDownloadingThisFile) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    val progress = downloadState?.progress ?: 0f
+                    if (progress > 0f) {
+                        CircularProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.5.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.5.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            } else if (primaryUrl != null) {
+                val trailingIcon = when {
+                    isViewableInApp -> Icons.Rounded.Visibility
+                    isDownloadable -> Icons.Rounded.Download
+                    else -> Icons.AutoMirrored.Rounded.ArrowForward
+                }
+                val contentDesc = when {
+                    isViewableInApp -> "Aperçu in-app"
+                    isDownloadable -> "Télécharger le fichier"
+                    else -> "Ouvrir"
+                }
+
                 Icon(
-                    imageVector = if (isViewableInApp) Icons.Rounded.Visibility else Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = if (isViewableInApp) "Aperçu in-app" else "Ouvrir",
+                    imageVector = trailingIcon,
+                    contentDescription = contentDesc,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
@@ -132,11 +200,10 @@ fun CourseModuleItem(
             .then(
                 if (primaryUrl != null) {
                     Modifier.clickable {
-                        val isViewableInApp = viewableFile?.fileType == ViewableFileType.IMAGE ||
-                                viewableFile?.fileType == ViewableFileType.VIDEO ||
-                                viewableFile?.fileType == ViewableFileType.PDF
-                        if (viewableFile != null && onOpenFile != null && isViewableInApp) {
+                        if (viewableFile != null && isViewableInApp && onOpenFile != null) {
                             onOpenFile(viewableFile)
+                        } else if (viewableFile != null && isDownloadable && onDownloadFile != null) {
+                            onDownloadFile(viewableFile)
                         } else {
                             try {
                                 uriHandler.openUri(primaryUrl)

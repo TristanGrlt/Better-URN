@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.FullscreenExit
@@ -73,7 +74,8 @@ import org.better.urn.ui.navigation.BackHandler
 fun VideoPlayerOverlay(
     file: ViewableFile,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDownloadFile: ((ViewableFile) -> Unit)? = null
 ) {
     BackHandler(enabled = true) {
         onClose()
@@ -355,16 +357,20 @@ fun VideoPlayerOverlay(
                             }
                             IconButton(
                                 onClick = {
-                                    try {
-                                        uriHandler.openUri(file.url)
-                                    } catch (_: Exception) {
+                                    if (onDownloadFile != null) {
+                                        onDownloadFile(file)
+                                    } else {
+                                        try {
+                                            uriHandler.openUri(file.url)
+                                        } catch (_: Exception) {
+                                        }
                                     }
                                 },
                                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
                             ) {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                                    contentDescription = "Ouvrir dans un navigateur externe"
+                                    imageVector = if (onDownloadFile != null) Icons.Rounded.Download else Icons.AutoMirrored.Rounded.OpenInNew,
+                                    contentDescription = if (onDownloadFile != null) "Télécharger le fichier" else "Ouvrir dans un navigateur externe"
                                 )
                             }
                         }
