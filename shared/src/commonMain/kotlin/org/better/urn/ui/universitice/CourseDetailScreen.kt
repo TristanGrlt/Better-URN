@@ -27,6 +27,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import org.better.urn.data.Course
 import org.better.urn.data.CourseSection
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.M3CourseDetailLoadingView
@@ -46,10 +48,16 @@ fun CourseDetailScreen(
     onToggleSectionCollapsed: (Int) -> Unit,
     onOpenFile: ((ViewableFile) -> Unit)? = null
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val listState = rememberSaveable(course.id, saver = LazyListState.Saver) { LazyListState() }
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
             title = course.fullname,
+            onTitleClick = {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
+            },
             onBackClick = onBackClick,
             onRefresh = onRefresh,
             isRefreshing = isLoading,

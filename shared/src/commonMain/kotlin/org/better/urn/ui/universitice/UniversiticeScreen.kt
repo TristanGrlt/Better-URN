@@ -17,10 +17,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
@@ -42,6 +44,7 @@ fun UniversiticeScreen(
     onOpenFile: (ViewableFile) -> Unit = {}
 ) {
     val token = state.token
+    val coroutineScope = rememberCoroutineScope()
     val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
 
     if (state.selectedCourse != null) {
@@ -70,6 +73,13 @@ fun UniversiticeScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
             title = "Universitice",
+            onTitleClick = if (state.isLogged) {
+                {
+                    coroutineScope.launch {
+                        gridState.animateScrollToItem(0)
+                    }
+                }
+            } else null,
             onRefresh = if (state.isLogged) onRefresh else null,
             isRefreshing = state.isLoading,
             refreshContentDescription = "Recharger les cours"
