@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -33,6 +34,7 @@ fun CourseCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleHide: (() -> Unit)? = null,
+    onOpenInBrowser: (() -> Unit)? = null,
     isHidden: Boolean = false,
 ) {
     val imageUrl = course.imageUrl ?: course.getImageUrl(token)
@@ -47,6 +49,7 @@ fun CourseCard(
         }
     }
     var showMenu by remember { mutableStateOf(false) }
+    val hasContextMenu = onToggleHide != null || onOpenInBrowser != null
 
     val isDark = isSystemInDarkTheme()
 
@@ -72,12 +75,12 @@ fun CourseCard(
                 .fillMaxWidth()
                 .height(160.dp)
                 .alpha(if (isHidden) 0.85f else 1f)
-                .pointerInput(onToggleHide) {
+                .pointerInput(hasContextMenu) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
                             if ((event.type == PointerEventType.Press) && event.buttons.isSecondaryPressed) {
-                                if (onToggleHide != null) {
+                                if (hasContextMenu) {
                                     showMenu = true
                                     event.changes.forEach { it.consume() }
                                 }
@@ -88,7 +91,7 @@ fun CourseCard(
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = {
-                        if (onToggleHide != null) {
+                        if (hasContextMenu) {
                             showMenu = true
                         }
                     }
@@ -170,26 +173,45 @@ fun CourseCard(
             }
         }
 
-        if (onToggleHide != null) {
+        if (hasContextMenu) {
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
             ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(if (isHidden) "Afficher le cours" else "Cacher le cours")
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isHidden) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                            contentDescription = null
-                        )
-                    },
-                    onClick = {
-                        showMenu = false
-                        onToggleHide()
-                    }
-                )
+                if (onOpenInBrowser != null) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Ouvrir dans le navigateur")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showMenu = false
+                            onOpenInBrowser()
+                        }
+                    )
+                }
+                if (onToggleHide != null) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(if (isHidden) "Afficher le cours" else "Cacher le cours")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = if (isHidden) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showMenu = false
+                            onToggleHide()
+                        }
+                    )
+                }
             }
         }
     }

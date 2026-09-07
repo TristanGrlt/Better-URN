@@ -16,6 +16,7 @@ import org.better.urn.data.ViewableFile
 data class UniversiticeUiState(
     val isLogged: Boolean = false,
     val token: String = "",
+    val moodleUrl: String = "https://universitice.univ-rouen.fr",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val user: MoodleUser? = null,

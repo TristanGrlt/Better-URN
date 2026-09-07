@@ -37,6 +37,7 @@ class UniversiticeViewModel(
         UniversiticeUiState(
             isLogged = preferences.moodleToken.isNotBlank(),
             token = preferences.moodleToken,
+            moodleUrl = preferences.moodleUrl,
             hiddenCourseIds = preferences.getHiddenCourseIds().toImmutableSet(),
             isHiddenSectionExpanded = preferences.isHiddenSectionExpanded
         )
@@ -121,6 +122,7 @@ class UniversiticeViewModel(
         _uiState.value = _uiState.value.copy(
             isLogged = true,
             token = token,
+            moodleUrl = url,
             errorMessage = null,
             searchQuery = ""
         )
@@ -353,7 +355,8 @@ class UniversiticeViewModel(
                 courses = processedCachedCourses.toImmutableList(),
                 filteredCourses = filteredCached.toImmutableList(),
                 isLogged = true,
-                token = token
+                token = token,
+                moodleUrl = url
             )
 
             if (token.isNotBlank() && processedCachedCourses.isNotEmpty()) {
@@ -390,6 +393,7 @@ class UniversiticeViewModel(
                     filteredCourses = filtered.toImmutableList(),
                     isLogged = true,
                     token = token,
+                    moodleUrl = url,
                     isLoading = false,
                     errorMessage = null
                 )
@@ -411,6 +415,7 @@ class UniversiticeViewModel(
                     isLoading = false,
                     isLogged = true,
                     token = preferences.moodleToken,
+                    moodleUrl = preferences.moodleUrl,
                     courses = displayCourses,
                     filteredCourses = displayFiltered,
                     errorMessage = if (displayCourses.isEmpty()) {

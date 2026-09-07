@@ -48,6 +48,14 @@ data class Course(
         return copy(imageUrl = cachedLocalPath ?: rawUrl)
     }
 
+    /**
+     * Constructs the web URL to view this course in a browser.
+     */
+    fun getWebUrl(baseUrl: String): String {
+        val cleanBaseUrl = baseUrl.trim().removeSuffix("/")
+        return "$cleanBaseUrl/course/view.php?id=$id"
+    }
+
 
 }
 

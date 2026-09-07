@@ -24,8 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.better.urn.data.Course
 import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
@@ -47,11 +49,16 @@ fun UniversiticeScreen(
     onToggleSectionCollapsed: (Int) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
     onOpenFile: (ViewableFile) -> Unit = {},
-    onDownloadFile: (ViewableFile) -> Unit = {}
+    onDownloadFile: (ViewableFile) -> Unit = {},
+    onOpenCourseInBrowser: ((Course) -> Unit)? = null
 ) {
     val token = state.token
     val coroutineScope = rememberCoroutineScope()
     val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    val uriHandler = LocalUriHandler.current
+    val handleOpenCourseInBrowser = onOpenCourseInBrowser ?: { course: Course ->
+        uriHandler.openUri(course.getWebUrl(state.moodleUrl))
+    }
 
     if (state.selectedCourse != null) {
         BackHandler(enabled = state.activeFileViewer == null) {
@@ -245,11 +252,15 @@ fun UniversiticeScreen(
                                         val onToggleHide = remember(course.id, onToggleCourseHidden) {
                                             { onToggleCourseHidden(course.id) }
                                         }
+                                        val onOpenInBrowser = remember(course, handleOpenCourseInBrowser) {
+                                            { handleOpenCourseInBrowser(course) }
+                                        }
                                         CourseCard(
                                             course = course,
                                             token = token,
                                             onClick = onClick,
                                             onToggleHide = onToggleHide,
+                                            onOpenInBrowser = onOpenInBrowser,
                                             isHidden = false
                                         )
                                     }
@@ -299,11 +310,15 @@ fun UniversiticeScreen(
                                                 val onToggleHide = remember(course.id, onToggleCourseHidden) {
                                                     { onToggleCourseHidden(course.id) }
                                                 }
+                                                val onOpenInBrowser = remember(course, handleOpenCourseInBrowser) {
+                                                    { handleOpenCourseInBrowser(course) }
+                                                }
                                                 CourseCard(
                                                     course = course,
                                                     token = token,
                                                     onClick = onClick,
                                                     onToggleHide = onToggleHide,
+                                                    onOpenInBrowser = onOpenInBrowser,
                                                     isHidden = true
                                                 )
                                             }

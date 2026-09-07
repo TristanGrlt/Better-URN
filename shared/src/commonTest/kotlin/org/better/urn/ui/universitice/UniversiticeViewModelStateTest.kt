@@ -72,4 +72,10 @@ class UniversiticeViewModelStateTest {
         viewModel.toggleHiddenSectionExpanded()
         assertEquals(!initialExpanded, viewModel.uiState.value.isHiddenSectionExpanded)
     }
+
+    @Test
+    fun testMoodleUrlInUiState() {
+        val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
+        assertEquals("https://universitice.univ-rouen.fr", viewModel.uiState.value.moodleUrl)
+    }
 }
