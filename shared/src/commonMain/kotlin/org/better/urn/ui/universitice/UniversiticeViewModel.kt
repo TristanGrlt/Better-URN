@@ -340,7 +340,7 @@ class UniversiticeViewModel(
             val cachedCourses = preferences.cachedCourses
 
             val processedCachedCourses = withContext(Dispatchers.Default) {
-                cachedCourses.map { it.withResolvedImageUrl(token) }
+                cachedCourses.map { it.sanitized().withResolvedImageUrl(token) }
             }
             val currentQuery = _uiState.value.searchQuery
             val filteredCached = withContext(Dispatchers.Default) {
@@ -362,7 +362,7 @@ class UniversiticeViewModel(
                 val fetchedCourses = client.getEnrolledCourses(fetchedUser.userid)
 
                 val processedCourses = withContext(Dispatchers.Default) {
-                    fetchedCourses.map { it.withResolvedImageUrl(token) }
+                    fetchedCourses.map { it.sanitized().withResolvedImageUrl(token) }
                 }
 
                 val serverHiddenIds = fetchedCourses.filter { it.isHidden }.map { it.id }.toSet()

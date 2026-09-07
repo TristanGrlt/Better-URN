@@ -22,6 +22,11 @@ data class Course(
     val imageUrl: String? = null,
     @SerialName("hidden") val isHidden: Boolean = false
 ) {
+    fun sanitized(): Course = copy(
+        fullname = fullname.cleanHtml(),
+        shortname = shortname.cleanHtml()
+    )
+
     fun getImageUrl(token: String): String? {
         if (imageUrl != null) return imageUrl
         val fileUrl = overviewfiles.firstOrNull()?.fileurl ?: return null
@@ -69,7 +74,8 @@ data class CourseModule(
 ) {
     fun sanitized(): CourseModule = copy(
         name = name.cleanHtml(),
-        description = description?.cleanHtml()?.takeIf { it.isNotBlank() }
+        description = description?.cleanHtml()?.takeIf { it.isNotBlank() },
+        contents = contents?.map { it.sanitized() }
     )
 
     /**
@@ -111,6 +117,10 @@ data class ModuleContent(
     val timecreated: Long? = null,
     val timemodified: Long? = null
 ) {
+    fun sanitized(): ModuleContent = copy(
+        filename = filename?.cleanHtml()
+    )
+
     /**
      * Returns a human-readable file size string.
      */
