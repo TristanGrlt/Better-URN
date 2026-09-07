@@ -14,10 +14,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
 import org.better.urn.ui.components.ImageViewerOverlay
@@ -67,7 +69,7 @@ fun App(
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            val universiticeViewModel = remember { UniversiticeViewModel() }
+            val universiticeViewModel: UniversiticeViewModel = viewModel { UniversiticeViewModel() }
             val state by universiticeViewModel.uiState.collectAsState()
 
             LaunchedEffect(deepLink) {
@@ -77,7 +79,20 @@ fun App(
                 }
             }
 
-            val tabBackstack = remember { mutableStateListOf(AppScreen.UNIVERSITICE) }
+            val tabBackstack = rememberSaveable(
+                saver = listSaver(
+                    save = { it.map { screen -> screen.name } },
+                    restore = { savedNames ->
+                        mutableStateListOf<AppScreen>().apply {
+                            addAll(savedNames.mapNotNull { name ->
+                                runCatching { AppScreen.valueOf(name) }.getOrNull()
+                            })
+                        }
+                    }
+                )
+            ) {
+                mutableStateListOf(AppScreen.UNIVERSITICE)
+            }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
 
             BackHandler(enabled = state.activeFileViewer == null && tabBackstack.size > 1) {

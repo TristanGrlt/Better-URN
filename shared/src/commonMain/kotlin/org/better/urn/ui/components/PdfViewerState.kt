@@ -5,7 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 
 /**
@@ -164,11 +166,35 @@ class PdfViewerState(
         const val MIN_ZOOM = 0.5f
         const val MAX_ZOOM = 5.0f
         const val ZOOM_STEP = 0.25f
+
+        val Saver: Saver<PdfViewerState, Any> = listSaver(
+            save = { state ->
+                listOf(
+                    state.currentPage,
+                    state.zoom,
+                    state.rotationAngle,
+                    state.fitMode.name,
+                    state.isGridVisible
+                )
+            },
+            restore = { list ->
+                PdfViewerState(
+                    initialPage = list[0] as Int,
+                    initialZoom = list[1] as Float,
+                    initialRotation = list[2] as Float,
+                    initialFitMode = runCatching { PdfFitMode.valueOf(list[3] as String) }.getOrDefault(PdfFitMode.FIT_PAGE)
+                ).apply {
+                    if (list[4] as Boolean) {
+                        toggleGrid()
+                    }
+                }
+            }
+        )
     }
 }
 
 /**
- * Creates and remembers a [PdfViewerState] instance across recompositions.
+ * Creates and remembers a [PdfViewerState] instance across recompositions and configuration changes.
  */
 @Composable
 fun rememberPdfViewerState(
@@ -177,7 +203,9 @@ fun rememberPdfViewerState(
     initialRotation: Float = 0f,
     initialFitMode: PdfFitMode = PdfFitMode.FIT_PAGE
 ): PdfViewerState {
-    return remember {
+    return rememberSaveable(
+        saver = PdfViewerState.Saver
+    ) {
         PdfViewerState(
             initialPage = initialPage,
             initialZoom = initialZoom,

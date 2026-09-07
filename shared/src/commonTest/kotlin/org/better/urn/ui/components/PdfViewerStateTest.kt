@@ -3,6 +3,7 @@ package org.better.urn.ui.components
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PdfViewerStateTest {
@@ -94,5 +95,32 @@ class PdfViewerStateTest {
 
         state.toggleGrid()
         assertTrue(state.isGridVisible)
+    }
+
+    @Test
+    fun testStateSaverAndRestoration() {
+        val state = PdfViewerState(
+            initialPage = 3,
+            initialZoom = 2f,
+            initialRotation = 90f,
+            initialFitMode = PdfFitMode.FIT_WIDTH
+        )
+        state.toggleGrid()
+
+        val saved = with(PdfViewerState.Saver) {
+            val scope = object : androidx.compose.runtime.saveable.SaverScope {
+                override fun canBeSaved(value: Any): Boolean = true
+            }
+            scope.save(state)
+        }
+        assertNotNull(saved)
+
+        val restored = PdfViewerState.Saver.restore(saved)
+        assertNotNull(restored)
+        assertEquals(3, restored.currentPage)
+        assertEquals(2f, restored.zoom)
+        assertEquals(90f, restored.rotationAngle)
+        assertEquals(PdfFitMode.FIT_WIDTH, restored.fitMode)
+        assertTrue(restored.isGridVisible)
     }
 }

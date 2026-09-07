@@ -3,6 +3,7 @@ package org.better.urn.ui.universitice
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +46,7 @@ fun CourseDetailScreen(
     onToggleSectionCollapsed: (Int) -> Unit,
     onOpenFile: ((ViewableFile) -> Unit)? = null
 ) {
+    val listState = rememberSaveable(course.id, saver = LazyListState.Saver) { LazyListState() }
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
             title = course.fullname,
@@ -160,6 +163,7 @@ fun CourseDetailScreen(
                         }
                     } else {
                         LazyColumn(
+                            state = listState,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
                             modifier = Modifier.fillMaxSize()

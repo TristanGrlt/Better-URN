@@ -43,6 +43,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -79,13 +80,13 @@ fun VideoPlayerOverlay(
     }
 
     val uriHandler = LocalUriHandler.current
-    var isPlaying by remember { mutableStateOf(true) }
-    var currentPosMs by remember { mutableLongStateOf(0L) }
-    var durationMs by remember { mutableLongStateOf(0L) }
-    var volume by remember { mutableFloatStateOf(1f) }
-    var lastVolume by remember { mutableFloatStateOf(1f) }
-    var playbackSpeed by remember { mutableFloatStateOf(1f) }
-    var isFullscreen by remember { mutableStateOf(false) }
+    var isPlaying by rememberSaveable(inputs = arrayOf(file.id)) { mutableStateOf(true) }
+    var currentPosMs by rememberSaveable(inputs = arrayOf(file.id)) { mutableLongStateOf(0L) }
+    var durationMs by rememberSaveable(inputs = arrayOf(file.id)) { mutableLongStateOf(0L) }
+    var volume by rememberSaveable(inputs = arrayOf(file.id)) { mutableFloatStateOf(1f) }
+    var lastVolume by rememberSaveable(inputs = arrayOf(file.id)) { mutableFloatStateOf(1f) }
+    var playbackSpeed by rememberSaveable(inputs = arrayOf(file.id)) { mutableFloatStateOf(1f) }
+    var isFullscreen by rememberSaveable(inputs = arrayOf(file.id)) { mutableStateOf(false) }
 
     var seekTargetMs by remember { mutableStateOf<Long?>(null) }
     var isBuffering by remember { mutableStateOf(true) }

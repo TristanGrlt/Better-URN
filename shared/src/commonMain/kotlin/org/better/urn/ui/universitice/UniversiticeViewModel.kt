@@ -1,9 +1,11 @@
 package org.better.urn.ui.universitice
 
+import androidx.lifecycle.ViewModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CoroutineDispatcher
 import org.better.urn.data.CourseModule
 import org.better.urn.data.MoodleClient
 import org.better.urn.data.MoodleTokenExpiredException
@@ -25,7 +26,7 @@ import org.better.urn.data.toViewableFile
 
 class UniversiticeViewModel(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main
-) {
+) : ViewModel() {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(mainDispatcher)
 

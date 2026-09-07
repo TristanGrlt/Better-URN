@@ -3,6 +3,7 @@ package org.better.urn.ui.universitice
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -40,6 +42,7 @@ fun UniversiticeScreen(
     onOpenFile: (ViewableFile) -> Unit = {}
 ) {
     val token = state.token
+    val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
 
     if (state.selectedCourse != null) {
         BackHandler(enabled = state.activeFileViewer == null) {
@@ -209,6 +212,7 @@ fun UniversiticeScreen(
                                 }
                             } else {
                                 LazyVerticalGrid(
+                                    state = gridState,
                                     columns = GridCells.Adaptive(minSize = 280.dp),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
