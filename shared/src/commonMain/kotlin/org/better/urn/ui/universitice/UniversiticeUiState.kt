@@ -20,6 +20,8 @@ data class UniversiticeUiState(
     val errorMessage: String? = null,
     val user: MoodleUser? = null,
     val courses: ImmutableList<Course> = persistentListOf(),
+    val hiddenCourseIds: ImmutableSet<Int> = persistentSetOf(),
+    val isHiddenSectionExpanded: Boolean = false,
     val searchQuery: String = "",
     val filteredCourses: ImmutableList<Course> = if (courses.isEmpty()) persistentListOf() else filterCourses(courses, searchQuery).toImmutableList(),
     val selectedCourse: Course? = null,
@@ -28,4 +30,16 @@ data class UniversiticeUiState(
     val isLoadingCourseContent: Boolean = false,
     val activeFileViewer: ViewableFile? = null,
     val downloadState: DownloadState? = null
-)
+) {
+    val visibleCourses: ImmutableList<Course>
+        get() = courses.filter { it.id !in hiddenCourseIds }.toImmutableList()
+
+    val hiddenCourses: ImmutableList<Course>
+        get() = courses.filter { it.id in hiddenCourseIds }.toImmutableList()
+
+    val filteredVisibleCourses: ImmutableList<Course>
+        get() = filteredCourses.filter { it.id !in hiddenCourseIds }.toImmutableList()
+
+    val filteredHiddenCourses: ImmutableList<Course>
+        get() = filteredCourses.filter { it.id in hiddenCourseIds }.toImmutableList()
+}

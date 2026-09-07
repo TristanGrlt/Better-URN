@@ -1,6 +1,7 @@
 package org.better.urn.data
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Immutable
@@ -18,7 +19,8 @@ data class Course(
     val fullname: String,
     val shortname: String,
     val overviewfiles: List<MoodleFile> = emptyList(),
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    @SerialName("hidden") val isHidden: Boolean = false
 ) {
     fun getImageUrl(token: String): String? {
         if (imageUrl != null) return imageUrl

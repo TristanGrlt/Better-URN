@@ -107,5 +107,26 @@ class MoodleClient(baseUrl: String, private val token: String) {
         checkMoodleError(responseText)
         return json.decodeFromString(responseText)
     }
+
+    /**
+     * Updates user course visibility preference on Moodle server.
+     */
+    suspend fun setCourseHidden(courseId: Int, isHidden: Boolean, userId: Int? = null) {
+        val responseText: String = sharedClient.get("$cleanBaseUrl/webservice/rest/server.php") {
+            headers.append(HttpHeaders.UserAgent, "Mozilla/5.0 (BetterURN)")
+            url {
+                parameters.append("wstoken", token)
+                parameters.append("wsfunction", "core_user_update_user_preferences")
+                parameters.append("moodlewsrestformat", "json")
+                parameters.append("preferences[0][name]", "block_myoverview_hidden_course_$courseId")
+                parameters.append("preferences[0][value]", if (isHidden) "1" else "0")
+                if (userId != null) {
+                    parameters.append("preferences[0][userid]", userId.toString())
+                }
+            }
+        }.body()
+
+        checkMoodleError(responseText)
+    }
 }
 

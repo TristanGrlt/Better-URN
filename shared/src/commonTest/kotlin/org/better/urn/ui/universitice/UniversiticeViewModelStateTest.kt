@@ -5,8 +5,10 @@ import org.better.urn.data.ViewableFile
 import org.better.urn.data.ViewableFileType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class UniversiticeViewModelStateTest {
 
@@ -51,5 +53,23 @@ class UniversiticeViewModelStateTest {
         viewModel.closeCourse()
         assertNull(viewModel.uiState.value.selectedCourse)
         assertNull(viewModel.uiState.value.activeFileViewer)
+    }
+
+    @Test
+    fun testToggleCourseHiddenAndSectionExpanded() {
+        val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
+
+        // Toggle hiding course 101
+        viewModel.toggleCourseHidden(101)
+        assertTrue(viewModel.uiState.value.hiddenCourseIds.contains(101))
+
+        // Toggle unhiding course 101
+        viewModel.toggleCourseHidden(101)
+        assertFalse(viewModel.uiState.value.hiddenCourseIds.contains(101))
+
+        // Toggle hidden section collapse/expansion
+        val initialExpanded = viewModel.uiState.value.isHiddenSectionExpanded
+        viewModel.toggleHiddenSectionExpanded()
+        assertEquals(!initialExpanded, viewModel.uiState.value.isHiddenSectionExpanded)
     }
 }

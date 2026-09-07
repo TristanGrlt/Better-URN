@@ -3,6 +3,7 @@ package org.better.urn.ui.universitice
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -10,14 +11,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
@@ -37,6 +40,8 @@ fun UniversiticeScreen(
     onAuthInput: (String, String) -> Unit = { _, _ -> },
     onRefresh: () -> Unit,
     onCourseClick: (Int) -> Unit,
+    onToggleCourseHidden: (Int) -> Unit = {},
+    onToggleHiddenSectionExpanded: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onRefreshCourse: () -> Unit = {},
     onToggleSectionCollapsed: (Int) -> Unit = {},
@@ -108,7 +113,8 @@ fun UniversiticeScreen(
                 if (state.isLoading && state.courses.isEmpty()) {
                     M3CoursesLoadingView()
                 } else {
-                    val filteredCourses = state.filteredCourses
+                    val visibleCourses = state.filteredVisibleCourses
+                    val hiddenCourses = state.filteredHiddenCourses
 
                     PullToRefreshBox(
                         isRefreshing = state.isLoading,
@@ -193,7 +199,7 @@ fun UniversiticeScreen(
                             }
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            if (filteredCourses.isEmpty() && state.courses.isNotEmpty()) {
+                            if (visibleCourses.isEmpty() && hiddenCourses.isEmpty() && state.courses.isNotEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -232,15 +238,76 @@ fun UniversiticeScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(bottom = 16.dp)
                                 ) {
-                                    items(filteredCourses, key = { it.id }) { course ->
+                                    items(visibleCourses, key = { it.id }) { course ->
                                         val onClick = remember(course.id, onCourseClick) {
                                             { onCourseClick(course.id) }
+                                        }
+                                        val onToggleHide = remember(course.id, onToggleCourseHidden) {
+                                            { onToggleCourseHidden(course.id) }
                                         }
                                         CourseCard(
                                             course = course,
                                             token = token,
-                                            onClick = onClick
+                                            onClick = onClick,
+                                            onToggleHide = onToggleHide,
+                                            isHidden = false
                                         )
+                                    }
+
+                                    if (hiddenCourses.isNotEmpty()) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
+                                            Surface(
+                                                onClick = onToggleHiddenSectionExpanded,
+                                                shape = MaterialTheme.shapes.medium,
+                                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = if (visibleCourses.isNotEmpty()) 16.dp else 0.dp)
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.VisibilityOff,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Text(
+                                                        text = "Cours masqués (${hiddenCourses.size})",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    Icon(
+                                                        imageVector = if (state.isHiddenSectionExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                                        contentDescription = if (state.isHiddenSectionExpanded) "Réduire les cours masqués" else "Déplier les cours masqués",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        if (state.isHiddenSectionExpanded) {
+                                            items(hiddenCourses, key = { "hidden_${it.id}" }) { course ->
+                                                val onClick = remember(course.id, onCourseClick) {
+                                                    { onCourseClick(course.id) }
+                                                }
+                                                val onToggleHide = remember(course.id, onToggleCourseHidden) {
+                                                    { onToggleCourseHidden(course.id) }
+                                                }
+                                                CourseCard(
+                                                    course = course,
+                                                    token = token,
+                                                    onClick = onClick,
+                                                    onToggleHide = onToggleHide,
+                                                    isHidden = true
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }

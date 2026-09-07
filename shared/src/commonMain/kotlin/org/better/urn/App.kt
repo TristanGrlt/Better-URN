@@ -130,6 +130,8 @@ fun App(
                                 onAuthInput = { input, url -> universiticeViewModel.handleAuthInput(input, url) },
                                 onRefresh = { universiticeViewModel.refresh() },
                                 onCourseClick = { courseId -> universiticeViewModel.openCourse(courseId) },
+                                onToggleCourseHidden = { courseId -> universiticeViewModel.toggleCourseHidden(courseId) },
+                                onToggleHiddenSectionExpanded = { universiticeViewModel.toggleHiddenSectionExpanded() },
                                 onBackClick = {
                                     if (state.activeFileViewer != null) {
                                         universiticeViewModel.closeFileViewer()

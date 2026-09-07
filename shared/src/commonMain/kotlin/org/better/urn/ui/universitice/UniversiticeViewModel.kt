@@ -36,7 +36,9 @@ class UniversiticeViewModel(
     private val _uiState = MutableStateFlow(
         UniversiticeUiState(
             isLogged = preferences.moodleToken.isNotBlank(),
-            token = preferences.moodleToken
+            token = preferences.moodleToken,
+            hiddenCourseIds = preferences.getHiddenCourseIds().toImmutableSet(),
+            isHiddenSectionExpanded = preferences.isHiddenSectionExpanded
         )
     )
     val uiState: StateFlow<UniversiticeUiState> = _uiState.asStateFlow()
@@ -218,6 +220,47 @@ class UniversiticeViewModel(
         _uiState.value = _uiState.value.copy(collapsedSectionIds = currentCollapsed.toImmutableSet())
     }
 
+    /**
+     * Toggles the hidden status of a course, updating local preferences and syncing asynchronously with Moodle.
+     */
+    fun toggleCourseHidden(courseId: Int) {
+        val currentHiddenIds = _uiState.value.hiddenCourseIds.toMutableSet()
+        val isNowHidden = if (currentHiddenIds.contains(courseId)) {
+            currentHiddenIds.remove(courseId)
+            false
+        } else {
+            currentHiddenIds.add(courseId)
+            true
+        }
+
+        preferences.setHiddenCourseIds(currentHiddenIds)
+        val newImmutableSet = currentHiddenIds.toImmutableSet()
+        _uiState.value = _uiState.value.copy(hiddenCourseIds = newImmutableSet)
+
+        val token = preferences.moodleToken
+        val url = preferences.moodleUrl
+        val userId = _uiState.value.user?.userid
+        if (token.isNotBlank()) {
+            scope.launch {
+                try {
+                    val client = MoodleClient(url, token)
+                    client.setCourseHidden(courseId, isNowHidden, userId)
+                } catch (_: Exception) {
+                    // Local preference persists even if Moodle REST call fails
+                }
+            }
+        }
+    }
+
+    /**
+     * Toggles the collapse/expansion state of the hidden courses bottom section.
+     */
+    fun toggleHiddenSectionExpanded() {
+        val newExpanded = !_uiState.value.isHiddenSectionExpanded
+        preferences.isHiddenSectionExpanded = newExpanded
+        _uiState.value = _uiState.value.copy(isHiddenSectionExpanded = newExpanded)
+    }
+
     fun refreshCurrentCourse() {
         val courseId = _uiState.value.selectedCourse?.id ?: return
         if (_uiState.value.isLoadingCourseContent) return
@@ -322,6 +365,10 @@ class UniversiticeViewModel(
                     fetchedCourses.map { it.withResolvedImageUrl(token) }
                 }
 
+                val serverHiddenIds = fetchedCourses.filter { it.isHidden }.map { it.id }.toSet()
+                val mergedHiddenIds = (preferences.getHiddenCourseIds() + serverHiddenIds).toSet()
+                preferences.setHiddenCourseIds(mergedHiddenIds)
+
                 preferences.moodleUrl = url
                 preferences.moodleToken = token
                 preferences.cachedUser = fetchedUser
@@ -334,6 +381,7 @@ class UniversiticeViewModel(
                 _uiState.value = _uiState.value.copy(
                     user = fetchedUser,
                     courses = processedCourses.toImmutableList(),
+                    hiddenCourseIds = mergedHiddenIds.toImmutableSet(),
                     filteredCourses = filtered.toImmutableList(),
                     isLogged = true,
                     token = token,

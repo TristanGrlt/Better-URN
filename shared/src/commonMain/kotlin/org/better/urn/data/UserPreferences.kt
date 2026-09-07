@@ -106,6 +106,22 @@ class UserPreferences {
         settings.putString(key, json.encodeToString(sectionIds))
     }
 
+    fun getHiddenCourseIds(): Set<Int> {
+        val key = "hidden_course_ids"
+        return settings.getStringOrNull(key)?.let {
+            try { json.decodeFromString(it) } catch (e: Exception) { emptySet() }
+        } ?: emptySet()
+    }
+
+    fun setHiddenCourseIds(courseIds: Set<Int>) {
+        val key = "hidden_course_ids"
+        settings.putString(key, json.encodeToString(courseIds))
+    }
+
+    var isHiddenSectionExpanded: Boolean
+        get() = settings.getBoolean("is_hidden_section_expanded", false)
+        set(value) = settings.putBoolean("is_hidden_section_expanded", value)
+
     companion object {
         private val fallbackMap = mutableMapOf<String, Any>()
         private val fallbackSettings = object : Settings {
