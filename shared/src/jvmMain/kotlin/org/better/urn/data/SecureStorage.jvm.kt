@@ -12,14 +12,33 @@ import javax.crypto.spec.SecretKeySpec
 actual object SecureStorage {
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
 
-    private val storageFile: File by lazy {
-        val userHome = System.getProperty("user.home") ?: "."
-        val dir = File(userHome, ".betterurn")
-        if (!dir.exists()) {
-            dir.mkdirs()
+    var overrideStorageDir: File? = null
+
+    private fun isRunningInTest(): Boolean {
+        if (System.getProperty("betterurn.storage.dir") != null) return true
+        if (System.getProperty("org.gradle.test.worker") != null) return true
+        return Thread.currentThread().stackTrace.any { element ->
+            val name = element.className.lowercase()
+            name.contains("test") || name.contains("junit")
         }
-        File(dir, "secure_store.properties")
     }
+
+    private val storageFile: File
+        get() {
+            val dir = overrideStorageDir
+                ?: System.getProperty("betterurn.storage.dir")?.let { File(it) }
+                ?: if (isRunningInTest()) {
+                    val tmpDir = System.getProperty("java.io.tmpdir") ?: "."
+                    File(tmpDir, "betterurn_test_storage")
+                } else {
+                    val userHome = System.getProperty("user.home") ?: "."
+                    File(userHome, ".betterurn")
+                }
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            return File(dir, "secure_store.properties")
+        }
 
     private val secretKey by lazy {
         val user = System.getProperty("user.name") ?: "default_user"

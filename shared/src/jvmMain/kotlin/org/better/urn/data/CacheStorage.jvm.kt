@@ -3,14 +3,33 @@ package org.better.urn.data
 import java.io.File
 
 actual object CacheStorage {
-    private val cacheDir: File by lazy {
-        val userHome = System.getProperty("user.home") ?: "."
-        val dir = File(userHome, ".betterurn/cache")
-        if (!dir.exists()) {
-            dir.mkdirs()
+    var overrideCacheDir: File? = null
+
+    private fun isRunningInTest(): Boolean {
+        if (System.getProperty("betterurn.cache.dir") != null) return true
+        if (System.getProperty("org.gradle.test.worker") != null) return true
+        return Thread.currentThread().stackTrace.any { element ->
+            val name = element.className.lowercase()
+            name.contains("test") || name.contains("junit")
         }
-        dir
     }
+
+    private val cacheDir: File
+        get() {
+            val dir = overrideCacheDir
+                ?: System.getProperty("betterurn.cache.dir")?.let { File(it) }
+                ?: if (isRunningInTest()) {
+                    val tmpDir = System.getProperty("java.io.tmpdir") ?: "."
+                    File(tmpDir, "betterurn_test_cache")
+                } else {
+                    val userHome = System.getProperty("user.home") ?: "."
+                    File(userHome, ".betterurn/cache")
+                }
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            return dir
+        }
 
     private fun getFileForKey(key: String): File {
         val safeFileName = key.replace(Regex("[^a-zA-Z0-9._-]"), "_") + ".json"

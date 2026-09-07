@@ -82,3 +82,10 @@ kotlin {
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
+
+tasks.withType<Test>().configureEach {
+    val testStorageDir = layout.buildDirectory.dir("tmp/test-storage").get().asFile.absolutePath
+    val testCacheDir = layout.buildDirectory.dir("tmp/test-cache").get().asFile.absolutePath
+    systemProperty("betterurn.storage.dir", testStorageDir)
+    systemProperty("betterurn.cache.dir", testCacheDir)
+}
