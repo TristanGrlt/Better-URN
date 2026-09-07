@@ -119,7 +119,7 @@ fun UniversiticeScreen(
                                 .padding(horizontal = 16.dp)
                                 .align(Alignment.TopCenter)
                         ) {
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(5.dp))
 
                             var isFocused by remember { mutableStateOf(false) }
 
