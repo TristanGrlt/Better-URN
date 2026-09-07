@@ -155,6 +155,8 @@ fun App(
                             if (selected == AppScreen.UNIVERSITICE) {
                                 if (state.activeFileViewer != null) {
                                     universiticeViewModel.closeFileViewer()
+                                } else if (state.selectedFolderModule != null) {
+                                    universiticeViewModel.closeFolder()
                                 } else if (state.selectedCourse != null) {
                                     universiticeViewModel.closeCourse()
                                 } else if (state.searchQuery.isNotEmpty()) {
@@ -177,6 +179,8 @@ fun App(
                                 onBackClick = {
                                     if (state.activeFileViewer != null) {
                                         universiticeViewModel.closeFileViewer()
+                                    } else if (state.selectedFolderModule != null) {
+                                        universiticeViewModel.navigateFolderUp()
                                     } else {
                                         universiticeViewModel.closeCourse()
                                     }
@@ -185,7 +189,13 @@ fun App(
                                 onToggleSectionCollapsed = { sectionId -> universiticeViewModel.toggleSectionCollapsed(sectionId) },
                                 onSearchQueryChange = { query -> universiticeViewModel.onSearchQueryChange(query) },
                                 onOpenFile = { file -> universiticeViewModel.openFileViewer(file) },
-                                onDownloadFile = { file -> universiticeViewModel.downloadFile(file) }
+                                onDownloadFile = { file -> universiticeViewModel.downloadFile(file) },
+                                onOpenFolder = { module -> universiticeViewModel.openFolder(module) },
+                                onCloseFolder = { universiticeViewModel.closeFolder() },
+                                onNavigateToSubfolder = { path -> universiticeViewModel.navigateToSubfolder(path) },
+                                onNavigateFolderUp = { universiticeViewModel.navigateFolderUp() },
+                                onFolderSearchQueryChange = { query -> universiticeViewModel.onFolderSearchQueryChange(query) },
+                                onDownloadAllFilesFolder = { module, path -> universiticeViewModel.downloadAllFilesInFolder(module, path) }
                             )
                         }
                         AppScreen.IZLY -> {

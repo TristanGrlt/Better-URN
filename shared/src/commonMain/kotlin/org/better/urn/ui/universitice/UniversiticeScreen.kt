@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.better.urn.data.Course
+import org.better.urn.data.CourseModule
 import org.better.urn.data.ViewableFile
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.CourseCard
@@ -50,6 +51,12 @@ fun UniversiticeScreen(
     onSearchQueryChange: (String) -> Unit = {},
     onOpenFile: (ViewableFile) -> Unit = {},
     onDownloadFile: (ViewableFile) -> Unit = {},
+    onOpenFolder: (CourseModule) -> Unit = {},
+    onCloseFolder: () -> Unit = {},
+    onNavigateToSubfolder: (String) -> Unit = {},
+    onNavigateFolderUp: () -> Unit = {},
+    onFolderSearchQueryChange: (String) -> Unit = {},
+    onDownloadAllFilesFolder: (CourseModule, String) -> Unit = { _, _ -> },
     onOpenCourseInBrowser: ((Course) -> Unit)? = null
 ) {
     val token = state.token
@@ -58,6 +65,27 @@ fun UniversiticeScreen(
     val uriHandler = LocalUriHandler.current
     val handleOpenCourseInBrowser = onOpenCourseInBrowser ?: { course: Course ->
         uriHandler.openUri(course.getWebUrl(state.moodleUrl))
+    }
+
+    val selectedFolder = state.selectedFolderModule
+    if (selectedFolder != null) {
+        BackHandler(enabled = state.activeFileViewer == null) {
+            onNavigateFolderUp()
+        }
+        FolderDetailScreen(
+            folderModule = selectedFolder,
+            treeContent = state.folderTreeContent,
+            searchQuery = state.folderSearchQuery,
+            downloadState = state.downloadState,
+            onBackClick = onNavigateFolderUp,
+            onNavigateToSubfolder = onNavigateToSubfolder,
+            onSearchQueryChange = onFolderSearchQueryChange,
+            onDownloadAllFiles = { onDownloadAllFilesFolder(selectedFolder, state.currentFolderPath) },
+            onOpenFile = onOpenFile,
+            onDownloadFile = onDownloadFile,
+            onRefresh = onRefreshCourse
+        )
+        return
     }
 
     if (state.selectedCourse != null) {
@@ -76,6 +104,7 @@ fun UniversiticeScreen(
             onToggleSectionCollapsed = onToggleSectionCollapsed,
             onOpenFile = onOpenFile,
             onDownloadFile = onDownloadFile,
+            onOpenFolder = onOpenFolder,
             downloadState = state.downloadState
         )
         return

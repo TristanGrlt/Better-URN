@@ -50,6 +50,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
 import org.better.urn.data.Course
+import org.better.urn.data.CourseModule
 import org.better.urn.data.CourseSection
 import org.better.urn.data.DownloadState
 import org.better.urn.data.ViewableFile
@@ -71,6 +72,7 @@ fun CourseDetailScreen(
     onToggleSectionCollapsed: (Int) -> Unit,
     onOpenFile: ((ViewableFile) -> Unit)? = null,
     onDownloadFile: ((ViewableFile) -> Unit)? = null,
+    onOpenFolder: ((CourseModule) -> Unit)? = null,
     downloadState: DownloadState? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -241,6 +243,7 @@ fun CourseDetailScreen(
                                                     token = token,
                                                     onOpenFile = onOpenFile,
                                                     onDownloadFile = onDownloadFile,
+                                                    onOpenFolder = onOpenFolder,
                                                     downloadState = downloadState
                                                 )
                                             }

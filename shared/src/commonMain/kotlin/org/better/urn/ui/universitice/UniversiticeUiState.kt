@@ -7,8 +7,11 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import org.better.urn.data.Course
+import org.better.urn.data.CourseModule
 import org.better.urn.data.CourseSection
 import org.better.urn.data.DownloadState
+import org.better.urn.data.FolderTreeContent
+import org.better.urn.data.MoodleFolderUtils
 import org.better.urn.data.MoodleUser
 import org.better.urn.data.ViewableFile
 
@@ -29,9 +32,25 @@ data class UniversiticeUiState(
     val courseSections: ImmutableList<CourseSection> = persistentListOf(),
     val collapsedSectionIds: ImmutableSet<Int> = persistentSetOf(),
     val isLoadingCourseContent: Boolean = false,
+    val selectedFolderModule: CourseModule? = null,
+    val currentFolderPath: String = "/",
+    val folderSearchQuery: String = "",
     val activeFileViewer: ViewableFile? = null,
     val downloadState: DownloadState? = null
 ) {
+    val folderTreeContent: FolderTreeContent?
+        get() {
+            val module = selectedFolderModule ?: return null
+            return MoodleFolderUtils.parseFolderTree(
+                contents = module.contents,
+                moduleId = module.id,
+                rootName = module.name,
+                currentPath = currentFolderPath,
+                searchQuery = folderSearchQuery,
+                token = token
+            )
+        }
+
     val visibleCourses: ImmutableList<Course>
         get() = courses.filter { it.id !in hiddenCourseIds }.toImmutableList()
 

@@ -51,6 +51,7 @@ fun CourseModuleItem(
     modifier: Modifier = Modifier,
     onOpenFile: ((ViewableFile) -> Unit)? = null,
     onDownloadFile: ((ViewableFile) -> Unit)? = null,
+    onOpenFolder: ((CourseModule) -> Unit)? = null,
     downloadState: DownloadState? = null
 ) {
     val uriHandler = LocalUriHandler.current
@@ -172,13 +173,15 @@ fun CourseModuleItem(
                         )
                     }
                 }
-            } else if (primaryUrl != null) {
+            } else if (module.modname == "folder" || primaryUrl != null) {
                 val trailingIcon = when {
+                    module.modname == "folder" -> Icons.AutoMirrored.Rounded.ArrowForward
                     isViewableInApp -> Icons.Rounded.Visibility
                     isDownloadable -> Icons.Rounded.Download
                     else -> Icons.AutoMirrored.Rounded.ArrowForward
                 }
                 val contentDesc = when {
+                    module.modname == "folder" -> "Ouvrir le dossier"
                     isViewableInApp -> "Aperçu in-app"
                     isDownloadable -> "Télécharger le fichier"
                     else -> "Ouvrir"
@@ -198,7 +201,9 @@ fun CourseModuleItem(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (primaryUrl != null) {
+                if (module.modname == "folder" && onOpenFolder != null) {
+                    Modifier.clickable { onOpenFolder(module) }
+                } else if (primaryUrl != null) {
                     Modifier.clickable {
                         if (viewableFile != null && isViewableInApp && onOpenFile != null) {
                             onOpenFile(viewableFile)

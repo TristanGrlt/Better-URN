@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import org.better.urn.data.CourseModule
 import org.better.urn.data.FileDownloader
 import org.better.urn.data.MoodleClient
+import org.better.urn.data.MoodleFolderUtils
 import org.better.urn.data.MoodleTokenExpiredException
 import org.better.urn.data.UserPreferences
 import org.better.urn.data.ViewableFile
@@ -172,11 +173,70 @@ class UniversiticeViewModel(
         }
     }
 
+    fun openFolder(module: CourseModule) {
+        _uiState.value = _uiState.value.copy(
+            selectedFolderModule = module,
+            currentFolderPath = "/",
+            folderSearchQuery = ""
+        )
+    }
+
+    fun closeFolder() {
+        _uiState.value = _uiState.value.copy(
+            selectedFolderModule = null,
+            currentFolderPath = "/",
+            folderSearchQuery = ""
+        )
+    }
+
+    fun navigateToSubfolder(path: String) {
+        val normalized = MoodleFolderUtils.normalizePath(path)
+        _uiState.value = _uiState.value.copy(
+            currentFolderPath = normalized,
+            folderSearchQuery = ""
+        )
+    }
+
+    fun navigateFolderUp() {
+        val currentPath = _uiState.value.currentFolderPath
+        if (currentPath == "/") {
+            closeFolder()
+        } else {
+            val parentPath = MoodleFolderUtils.getParentPath(currentPath)
+            _uiState.value = _uiState.value.copy(
+                currentFolderPath = parentPath,
+                folderSearchQuery = ""
+            )
+        }
+    }
+
+    fun onFolderSearchQueryChange(query: String) {
+        _uiState.value = _uiState.value.copy(folderSearchQuery = query)
+    }
+
+    fun downloadAllFilesInFolder(folderModule: CourseModule, folderPath: String = "/") {
+        val token = _uiState.value.token
+        val filesToDownload = MoodleFolderUtils.extractAllFiles(
+            contents = folderModule.contents,
+            moduleId = folderModule.id,
+            folderPath = folderPath,
+            token = token
+        )
+        filesToDownload.forEach { file ->
+            downloadFile(file)
+        }
+    }
+
     fun openFileViewer(file: ViewableFile) {
         _uiState.value = _uiState.value.copy(activeFileViewer = file)
     }
 
     fun openModuleFile(module: CourseModule): Boolean {
+        if (module.modname == "folder") {
+            openFolder(module)
+            return true
+        }
+
         val token = _uiState.value.token
         val viewable = module.toViewableFile(token) ?: return false
         val isDownloadable = !viewable.isViewableInApp &&
@@ -204,6 +264,9 @@ class UniversiticeViewModel(
             selectedCourse = null,
             courseSections = persistentListOf(),
             collapsedSectionIds = persistentSetOf(),
+            selectedFolderModule = null,
+            currentFolderPath = "/",
+            folderSearchQuery = "",
             activeFileViewer = null
         )
     }
@@ -291,6 +354,9 @@ class UniversiticeViewModel(
             selectedCourse = null,
             courseSections = persistentListOf(),
             collapsedSectionIds = persistentSetOf(),
+            selectedFolderModule = null,
+            currentFolderPath = "/",
+            folderSearchQuery = "",
             errorMessage = displayMsg
         )
     }
