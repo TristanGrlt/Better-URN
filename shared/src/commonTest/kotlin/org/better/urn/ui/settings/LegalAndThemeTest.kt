@@ -53,4 +53,12 @@ class LegalAndThemeTest {
         assertTrue(FULL_GPLv3_LICENSE_TEXT.contains("GNU GENERAL PUBLIC LICENSE"))
         assertTrue(FULL_GPLv3_LICENSE_TEXT.contains("Version 3, 29 June 2007"))
     }
+
+    @Test
+    fun testBuildKonfigFieldsArePopulated() {
+        assertTrue(org.better.urn.BuildKonfig.APP_NAME.isNotBlank())
+        assertTrue(org.better.urn.BuildKonfig.VERSION_NAME.isNotBlank())
+        assertTrue(org.better.urn.BuildKonfig.BUILD_NUMBER > 0)
+        assertTrue(org.better.urn.BuildKonfig.GIT_HASH.isNotBlank())
+    }
 }

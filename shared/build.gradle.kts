@@ -1,11 +1,69 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.INT
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.buildkonfig)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     kotlin("plugin.serialization") version "2.0.0"
+}
+
+fun getGitTagName(): String {
+    return runCatching {
+        val output = providers.exec {
+            commandLine("git", "describe", "--tags", "--exact-match")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+
+        if (output.isNotBlank()) {
+            output.removePrefix("v")
+        } else {
+            val latestOutput = providers.exec {
+                commandLine("git", "describe", "--tags", "--abbrev=0")
+                isIgnoreExitValue = true
+            }.standardOutput.asText.get().trim()
+            if (latestOutput.isNotBlank()) {
+                "${latestOutput.removePrefix("v")}-dev"
+            } else {
+                "1.0.0-dev"
+            }
+        }
+    }.getOrDefault("1.0.0-dev")
+}
+
+fun getGitCommitCount(): Int {
+    return runCatching {
+        val output = providers.exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+        output.toIntOrNull() ?: 1
+    }.getOrDefault(1)
+}
+
+fun getGitCommitHash(): String {
+    return runCatching {
+        val output = providers.exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+        output.ifBlank { "dev" }
+    }.getOrDefault("dev")
+}
+
+buildkonfig {
+    packageName = "org.better.urn"
+    objectName = "BuildKonfig"
+
+    defaultConfigs {
+        buildConfigField(STRING, "APP_NAME", "Better URN")
+        buildConfigField(STRING, "VERSION_NAME", getGitTagName())
+        buildConfigField(INT, "BUILD_NUMBER", getGitCommitCount().toString())
+        buildConfigField(STRING, "GIT_HASH", getGitCommitHash())
+    }
 }
 
 kotlin {
