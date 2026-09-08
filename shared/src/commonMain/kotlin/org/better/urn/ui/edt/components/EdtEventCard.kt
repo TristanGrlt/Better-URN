@@ -1,29 +1,41 @@
 package org.better.urn.ui.edt.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.better.urn.data.EdtEvent
+import org.better.urn.data.formatBreakDuration
+import org.better.urn.data.formatEventHours
+import org.better.urn.data.parseHexColor
 
 @Composable
 fun EdtEventCard(
@@ -31,44 +43,82 @@ fun EdtEventCard(
     modifier: Modifier = Modifier
 ) {
     ElevatedCard(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min)
+                .padding(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .fillMaxHeight()
-                    .background(parseHexColor(event.colorHex))
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(parseHexColor(event.colorHex), CircleShape)
+                )
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                if (event.location.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = event.location,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            }
+
+            val formattedHours = formatEventHours(event.startMs, event.endMs)
+            if (formattedHours.isNotBlank() || event.location.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (formattedHours.isNotBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                }
-                val formattedHours = formatEventHours(event.startMs, event.endMs)
-                if (formattedHours.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = formattedHours,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (event.location.isNotBlank()) {
+                if (formattedHours.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Text(
+                        text = event.location,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -76,36 +126,67 @@ fun EdtEventCard(
     }
 }
 
-private fun parseHexColor(hexString: String): Color {
-    val cleanHex = hexString.trim().removePrefix("#")
-    if (cleanHex.length != 6 && cleanHex.length != 8) return Color.Gray
-    return try {
-        val colorLong = cleanHex.toLong(16)
-        if (cleanHex.length == 6) {
-            Color(0xFF000000 or colorLong)
-        } else {
-            Color(colorLong)
+@Composable
+fun BreakDivider(
+    durationMinutes: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        DashedLine(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Schedule,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = formatBreakDuration(durationMinutes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-    } catch (_: Exception) {
-        Color.Gray
+        Spacer(modifier = Modifier.width(8.dp))
+        DashedLine(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
     }
 }
 
-private fun formatEventHours(startMs: Long, endMs: Long): String {
-    if (startMs == 0L || endMs == 0L) return ""
-    return try {
-        val timeZone = TimeZone.currentSystemDefault()
-        val startDateTime = Instant.fromEpochMilliseconds(startMs).toLocalDateTime(timeZone)
-        val endDateTime = Instant.fromEpochMilliseconds(endMs).toLocalDateTime(timeZone)
-
-        fun formatTime(dt: LocalDateTime): String {
-            val hour = dt.hour.toString().padStart(2, '0')
-            val minute = dt.minute.toString().padStart(2, '0')
-            return "$hour:$minute"
-        }
-
-        "${formatTime(startDateTime)} - ${formatTime(endDateTime)}"
-    } catch (_: Exception) {
-        ""
+@Composable
+private fun DashedLine(
+    modifier: Modifier = Modifier,
+    color: Color
+) {
+    Canvas(modifier = modifier.height(1.dp)) {
+        val pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+        drawLine(
+            color = color,
+            start = Offset(0f, size.height / 2),
+            end = Offset(size.width, size.height / 2),
+            strokeWidth = size.height,
+            pathEffect = pathEffect
+        )
     }
 }

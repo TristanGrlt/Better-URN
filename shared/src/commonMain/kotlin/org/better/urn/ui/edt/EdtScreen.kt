@@ -1,107 +1,146 @@
 package org.better.urn.ui.edt
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.better.urn.ui.components.BetterUrnTopBar
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.better.urn.data.AgendaDayItem
+import org.better.urn.data.formatWeekRange
+import org.better.urn.data.getMondayOfWeek
+import org.better.urn.data.groupEventsAndInsertBreaks
+import org.better.urn.ui.components.M3CoursesLoadingView
 import org.better.urn.ui.edt.components.AddTimetableDialog
+import org.better.urn.ui.edt.components.BreakDivider
+import org.better.urn.ui.edt.components.EdtDayHeader
 import org.better.urn.ui.edt.components.EdtEventCard
+import org.better.urn.ui.edt.components.EdtWeekView
+import org.better.urn.ui.edt.components.TimetableManagerSheet
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EdtScreen(
     onProfileClick: (() -> Unit)? = null,
     viewModel: EdtViewModel = viewModel { EdtViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val timetables by viewModel.timetables.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showManagerSheet by remember { mutableStateOf(false) }
     val tabs = listOf("Agenda", "Semaine")
 
     Scaffold(
         topBar = {
-            BetterUrnTopBar(
-                title = "Emploi du temps",
-                onProfileClick = onProfileClick,
+            TopAppBar(
+                title = {
+                    SecondaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.widthIn(max = 280.dp),
+                        divider = {}
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            )
+                        }
+                    }
+                },
                 actions = {
-                    IconButton(onClick = { /* Gestion de la visibilité des ICS */ }) {
+                    IconButton(onClick = { showManagerSheet = true }) {
                         Icon(
                             imageVector = Icons.Rounded.FilterList,
                             contentDescription = "Filtrer les calendriers"
                         )
                     }
+                    IconButton(
+                        onClick = { onProfileClick?.invoke() },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AccountCircle,
+                            contentDescription = "Profil utilisateur",
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "Ajouter un calendrier"
-                )
-            }
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
         ) {
-            SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(text = title) }
-                    )
-                }
-            }
-
             when (selectedTabIndex) {
-                0 -> { // Agenda
+                0 -> { // Agenda View
                     when (val state = uiState) {
                         is EdtUiState.Loading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
+                            M3CoursesLoadingView(
+                                message = "Chargement de l'emploi du temps...",
+                                subtitle = "Récupération de vos cours"
+                            )
                         }
                         is EdtUiState.Success -> {
                             if (state.events.isEmpty()) {
@@ -115,16 +154,94 @@ fun EdtScreen(
                                     )
                                 }
                             } else {
-                                LazyColumn(
+                                val timeZone = remember { TimeZone.currentSystemDefault() }
+                                val today = remember {
+                                    Clock.System.now().toLocalDateTime(timeZone).date
+                                }
+                                val groupedEvents = remember(state.events) {
+                                    state.events.groupBy { event ->
+                                        Instant.fromEpochMilliseconds(event.startMs)
+                                            .toLocalDateTime(timeZone)
+                                            .date
+                                    }
+                                }
+
+                                Box(
                                     modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    contentAlignment = Alignment.TopCenter
                                 ) {
-                                    items(
-                                        items = state.events,
-                                        key = { it.id }
-                                    ) { event ->
-                                        EdtEventCard(event = event)
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .widthIn(max = 800.dp)
+                                            .fillMaxSize(),
+                                        contentPadding = PaddingValues(bottom = 88.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        groupedEvents.entries.forEachIndexed { groupIndex, (date, dayEvents) ->
+                                            if (groupIndex > 0) {
+                                                item(key = "sep_$date") {
+                                                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                                                        Spacer(modifier = Modifier.height(16.dp))
+                                                        HorizontalDivider(
+                                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(12.dp))
+                                                    }
+                                                }
+                                            }
+
+                                            stickyHeader(key = "header_$date") {
+                                                Surface(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    color = MaterialTheme.colorScheme.surface
+                                                ) {
+                                                    EdtDayHeader(
+                                                        date = date,
+                                                        today = today,
+                                                        modifier = Modifier.padding(
+                                                            horizontal = 16.dp,
+                                                            vertical = if (groupIndex == 0) 8.dp else 4.dp
+                                                        )
+                                                    )
+                                                }
+                                            }
+
+                                            val dayItems = groupEventsAndInsertBreaks(dayEvents)
+                                            items(
+                                                items = dayItems,
+                                                key = { item ->
+                                                    when (item) {
+                                                        is AgendaDayItem.EventGroup -> "group_${item.events.first().id}_${item.events.size}"
+                                                        is AgendaDayItem.Break -> "break_${date}_${item.durationMinutes}_${dayItems.indexOf(item)}"
+                                                    }
+                                                }
+                                            ) { item ->
+                                                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                                    when (item) {
+                                                        is AgendaDayItem.EventGroup -> {
+                                                            if (item.events.size == 1) {
+                                                                EdtEventCard(event = item.events.first())
+                                                            } else {
+                                                                Row(
+                                                                    modifier = Modifier.fillMaxWidth(),
+                                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                                ) {
+                                                                    item.events.forEach { event ->
+                                                                        EdtEventCard(
+                                                                            event = event,
+                                                                            modifier = Modifier.weight(1f)
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        is AgendaDayItem.Break -> {
+                                                            BreakDivider(durationMinutes = item.durationMinutes)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -152,17 +269,142 @@ fun EdtScreen(
                         }
                     }
                 }
-                else -> { // Semaine
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Vue Semaine en construction...",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                1 -> { // Semaine View
+                    val timeZone = remember { TimeZone.currentSystemDefault() }
+                    val today = remember { Clock.System.now().toLocalDateTime(timeZone).date }
+                    val initialWeekStart = remember(today) { getMondayOfWeek(today) }
+
+                    val initialPage = 1000
+                    val pagerState = rememberPagerState(initialPage = initialPage) { 2000 }
+                    val coroutineScope = rememberCoroutineScope()
+
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val isDesktop = maxWidth >= 600.dp
+                        val currentWeekOffset = pagerState.currentPage - initialPage
+                        val currentWeekStart = remember(initialWeekStart, currentWeekOffset) {
+                            LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + currentWeekOffset * 7)
+                        }
+
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            if (isDesktop) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                            contentDescription = "Semaine précédente"
+                                        )
+                                    }
+
+                                    Text(
+                                        text = formatWeekRange(currentWeekStart),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                                            contentDescription = "Semaine suivante"
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            }
+
+                            when (val state = uiState) {
+                                is EdtUiState.Loading -> {
+                                    M3CoursesLoadingView(
+                                        message = "Chargement de l'emploi du temps...",
+                                        subtitle = "Récupération de vos cours"
+                                    )
+                                }
+                                is EdtUiState.Success -> {
+                                    if (state.events.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Aucun événement à afficher",
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                    } else {
+                                        HorizontalPager(
+                                            state = pagerState,
+                                            modifier = Modifier.fillMaxSize()
+                                        ) { page ->
+                                            val weekOffset = page - initialPage
+                                            val pageWeekStart = remember(initialWeekStart, weekOffset) {
+                                                LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+                                            }
+
+                                            EdtWeekView(
+                                                events = state.events,
+                                                weekStart = pageWeekStart,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+                                }
+                                is EdtUiState.Error -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = state.message,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.error,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Button(onClick = { viewModel.loadEvents() }) {
+                                                Text("Réessayer")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+            }
+
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = "Ajouter un calendrier"
+                )
             }
         }
 
@@ -173,6 +415,15 @@ fun EdtScreen(
                     viewModel.addTimetable(name, url)
                     showAddDialog = false
                 }
+            )
+        }
+
+        if (showManagerSheet) {
+            TimetableManagerSheet(
+                timetables = timetables,
+                onToggle = { id -> viewModel.toggleVisibility(id) },
+                onDelete = { id -> viewModel.deleteTimetable(id) },
+                onDismiss = { showManagerSheet = false }
             )
         }
     }

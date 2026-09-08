@@ -22,8 +22,9 @@ open class EdtRepository(
         url: String = DEFAULT_ADE_URL,
         isDarkTheme: Boolean = false
     ): List<EdtEvent> {
+        val targetUrl = normalizeUrl(url)
         return try {
-            val responseText = client.get(url) {
+            val responseText = client.get(targetUrl) {
                 header(HttpHeaders.UserAgent, "Mozilla/5.0 (BetterURN)")
             }.bodyAsText()
 
