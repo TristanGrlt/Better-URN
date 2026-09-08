@@ -1,19 +1,38 @@
-*.iml
-.kotlin
-.gradle
+# Gradle
+.gradle/
 **/build/
-xcuserdata
 !src/**/build/
+
+# IDE / Android Studio / IntelliJ
+.idea/
+*.iml
+.kotlin/
 local.properties
-.idea
-.DS_Store
-captures
-.externalNativeBuild
-.cxx
+captures/
+
+# Build outputs
+*.apk
+*.aab
+*.keystore
+*.jks
+*.hprof
+
+# Native
+.externalNativeBuild/
+.cxx/
+
+# Xcode / iOS
+xcuserdata
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Web / Node
 node_modules/
+
+# OS specific
+.DS_Store
+Thumbs.db
