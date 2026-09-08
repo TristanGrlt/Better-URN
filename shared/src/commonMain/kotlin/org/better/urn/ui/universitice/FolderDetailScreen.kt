@@ -85,7 +85,8 @@ fun FolderDetailScreen(
     onDownloadAllFiles: () -> Unit,
     onOpenFile: (ViewableFile) -> Unit,
     onDownloadFile: (ViewableFile) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onProfileClick: (() -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         BetterUrnTopBar(
@@ -93,7 +94,8 @@ fun FolderDetailScreen(
             onBackClick = onBackClick,
             onRefresh = onRefresh,
             isRefreshing = false,
-            refreshContentDescription = "Actualiser le dossier"
+            refreshContentDescription = "Actualiser le dossier",
+            onProfileClick = onProfileClick
         )
 
         Box(

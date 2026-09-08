@@ -57,7 +57,8 @@ fun UniversiticeScreen(
     onNavigateFolderUp: () -> Unit = {},
     onFolderSearchQueryChange: (String) -> Unit = {},
     onDownloadAllFilesFolder: (CourseModule, String) -> Unit = { _, _ -> },
-    onOpenCourseInBrowser: ((Course) -> Unit)? = null
+    onOpenCourseInBrowser: ((Course) -> Unit)? = null,
+    onProfileClick: () -> Unit = {}
 ) {
     val token = state.token
     val coroutineScope = rememberCoroutineScope()
@@ -83,7 +84,8 @@ fun UniversiticeScreen(
             onDownloadAllFiles = { onDownloadAllFilesFolder(selectedFolder, state.currentFolderPath) },
             onOpenFile = onOpenFile,
             onDownloadFile = onDownloadFile,
-            onRefresh = onRefreshCourse
+            onRefresh = onRefreshCourse,
+            onProfileClick = onProfileClick
         )
         return
     }
@@ -105,7 +107,8 @@ fun UniversiticeScreen(
             onOpenFile = onOpenFile,
             onDownloadFile = onDownloadFile,
             onOpenFolder = onOpenFolder,
-            downloadState = state.downloadState
+            downloadState = state.downloadState,
+            onProfileClick = onProfileClick
         )
         return
     }
@@ -126,7 +129,8 @@ fun UniversiticeScreen(
             } else null,
             onRefresh = if (state.isLogged) onRefresh else null,
             isRefreshing = state.isLoading,
-            refreshContentDescription = "Recharger les cours"
+            refreshContentDescription = "Recharger les cours",
+            onProfileClick = onProfileClick
         )
 
         Box(

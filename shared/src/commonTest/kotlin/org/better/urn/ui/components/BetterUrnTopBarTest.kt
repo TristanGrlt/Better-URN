@@ -15,4 +15,14 @@ class BetterUrnTopBarTest {
         onTitleClick()
         assertTrue(clicked)
     }
+
+    @Test
+    fun testProfileClickCallback() {
+        var clicked = false
+        val onProfileClick = { clicked = true }
+
+        assertFalse(clicked)
+        onProfileClick()
+        assertTrue(clicked)
+    }
 }

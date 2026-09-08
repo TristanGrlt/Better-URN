@@ -2,32 +2,42 @@ package org.better.urn.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,15 +45,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.better.urn.data.AppTheme
 import org.better.urn.ui.components.BetterUrnTopBar
+import org.better.urn.ui.components.LegalBottomSheet
+import org.better.urn.ui.components.LicenseBottomSheet
 
 /**
- * Settings screen Composable complying strictly with Material 3 design guidelines.
+ * Settings screen Composable complying strictly with Material 3 Expressive guidelines.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,8 +69,10 @@ fun SettingsScreen(
     onLogoutClicked: () -> Unit,
     onToggleLegalDialog: (Boolean?) -> Unit,
     modifier: Modifier = Modifier,
+    onToggleLicenseDialog: ((Boolean?) -> Unit)? = null,
     onToggleServerDialog: ((Boolean?) -> Unit)? = null,
-    onBackClick: (() -> Unit)? = null
+    onBackClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     var isLocalServerDialogOpen by remember { mutableStateOf(false) }
     var tempServerUrl by remember(state.moodleUrl) { mutableStateOf(state.moodleUrl) }
@@ -73,233 +89,332 @@ fun SettingsScreen(
         topBar = {
             BetterUrnTopBar(
                 title = "Paramètres",
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                onProfileClick = onProfileClick
             )
         },
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Account section
-            item {
-                SettingsSectionHeader(title = "Compte")
-            }
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = state.currentUser?.fullname ?: "Non connecté",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = if (state.currentUser != null) "Compte Moodle actif" else "Connectez-vous via l'onglet Universitice",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.AccountCircle,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                )
-            }
-            if (state.currentUser != null) {
+            LazyColumn(
+                modifier = Modifier
+                    .widthIn(max = 800.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section: Compte
                 item {
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                text = "Se déconnecter",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Medium
-                            )
-                        },
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Logout,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        },
-                        modifier = Modifier.clickable(onClick = onLogoutClicked)
-                    )
-                }
-            }
+                    SettingsCardGroup(title = "Compte") {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = state.currentUser?.fullname ?: "Non connecté",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = if (state.currentUser != null) "Compte Moodle actif" else "Connectez-vous via l'onglet Universitice",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.AccountCircle,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(28.dp),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
-            // Server section
-            item {
-                SettingsSectionHeader(title = "Serveur")
-            }
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = "URL du serveur Moodle",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = state.moodleUrl,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.Dns,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        tempServerUrl = state.moodleUrl
-                        if (onToggleServerDialog != null) {
-                            onToggleServerDialog(true)
-                        } else {
-                            isLocalServerDialogOpen = true
+                        if (state.currentUser != null) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        text = "Se déconnecter",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                leadingContent = {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.errorContainer,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.Logout,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(onClick = onLogoutClicked)
+                            )
                         }
                     }
-                )
-            }
+                }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
-            // Appearance section
-            item {
-                SettingsSectionHeader(title = "Apparence")
-            }
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = "Thème de l'application",
-                            style = MaterialTheme.typography.bodyLarge
+                // Section: Serveur
+                item {
+                    SettingsCardGroup(title = "Serveur") {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = "URL du serveur Moodle",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = state.moodleUrl,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Dns,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    tempServerUrl = state.moodleUrl
+                                    if (onToggleServerDialog != null) {
+                                        onToggleServerDialog(true)
+                                    } else {
+                                        isLocalServerDialogOpen = true
+                                    }
+                                }
                         )
-                    },
-                    supportingContent = {
-                        SingleChoiceSegmentedButtonRow(
+                    }
+                }
+
+                // Section: Apparence
+                item {
+                    SettingsCardGroup(title = "Apparence") {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            val themes = listOf(
-                                AppTheme.SYSTEM to "Système",
-                                AppTheme.LIGHT to "Clair",
-                                AppTheme.DARK to "Sombre"
-                            )
-                            themes.forEachIndexed { index, (themeOption, label) ->
-                                SegmentedButton(
-                                    selected = state.theme == themeOption,
-                                    onClick = { onThemeChanged(themeOption) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = themes.size
-                                    )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
                                 ) {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.labelMedium
-                                    )
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Palette,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Thème de l'application",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                val themes = listOf(
+                                    AppTheme.SYSTEM to "Système",
+                                    AppTheme.LIGHT to "Clair",
+                                    AppTheme.DARK to "Sombre"
+                                )
+                                themes.forEachIndexed { index, (themeOption, label) ->
+                                    SegmentedButton(
+                                        selected = state.theme == themeOption,
+                                        onClick = { onThemeChanged(themeOption) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = themes.size
+                                        )
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
                                 }
                             }
                         }
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.Palette,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                }
+
+                // Section: Stockage
+                item {
+                    SettingsCardGroup(title = "Stockage") {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = "Vider le cache",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = "Supprimer les fichiers temporaires et données en cache",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DeleteOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(onClick = onClearCacheClicked)
                         )
                     }
-                )
-            }
+                }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
+                // Section: Légal
+                item {
+                    SettingsCardGroup(title = "Légal") {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = "Mentions légales & Confidentialité",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = "Informations juridiques et politique de confidentialité",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Policy,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onToggleLegalDialog(true) }
+                        )
 
-            // Storage section
-            item {
-                SettingsSectionHeader(title = "Stockage")
-            }
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = "Vider le cache",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = "Supprimer les fichiers temporaires et données en cache",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.DeleteOutline,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    modifier = Modifier.clickable(onClick = onClearCacheClicked)
-                )
-            }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
-            // Legal section
-            item {
-                SettingsSectionHeader(title = "Légal")
-            }
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = "Mentions légales & Confidentialité",
-                            style = MaterialTheme.typography.bodyLarge
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = "Licence Open-Source",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = "Licence publique générale GNU v3.0 (GPLv3)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Gavel,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onToggleLicenseDialog?.invoke(true) }
                         )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = "Informations juridiques et politique de confidentialité",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Rounded.Policy,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    modifier = Modifier.clickable { onToggleLegalDialog(true) }
-                )
+                    }
+                }
             }
         }
 
@@ -350,46 +465,51 @@ fun SettingsScreen(
             )
         }
 
-        // Legal notice dialog
+        // Legal notice bottom sheet
         if (state.isLegalDialogOpen) {
-            AlertDialog(
-                onDismissRequest = { onToggleLegalDialog(false) },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Policy,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                title = {
-                    Text(text = "Mentions légales & Confidentialité")
-                },
-                text = {
-                    Text(
-                        text = "Better URN est un client alternatif open-source développé pour faciliter l'accès aux cours et documents universitaires.\n\nCette application n'est pas affiliée officiellement aux services Moodle de l'Université de Rouen Normandie.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { onToggleLegalDialog(false) }) {
-                        Text("Fermer")
-                    }
-                }
+            LegalBottomSheet(
+                onDismissRequest = { onToggleLegalDialog(false) }
+            )
+        }
+
+        // License bottom sheet
+        if (state.isLicenseDialogOpen) {
+            LicenseBottomSheet(
+                onDismissRequest = { onToggleLicenseDialog?.invoke(false) }
             )
         }
     }
 }
 
 @Composable
-private fun SettingsSectionHeader(
+private fun SettingsCardGroup(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
 ) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+        ElevatedCard(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                content()
+            }
+        }
+    }
 }

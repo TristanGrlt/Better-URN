@@ -28,6 +28,7 @@ fun BetterUrnTopBar(
     onRefresh: (() -> Unit)? = null,
     isRefreshing: Boolean = false,
     refreshContentDescription: String = "Actualiser",
+    onProfileClick: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
@@ -89,7 +90,7 @@ fun BetterUrnTopBar(
             }
             actions()
             IconButton(
-                onClick = { /* TODO: Afficher le profil */ },
+                onClick = { onProfileClick?.invoke() },
                 modifier = Modifier.padding(end = 8.dp)
             ) {
                 Icon(

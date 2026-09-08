@@ -13,5 +13,6 @@ data class SettingsUiState(
     val moodleUrl: String = "https://universitice.univ-rouen.fr",
     val theme: AppTheme = AppTheme.SYSTEM,
     val isLegalDialogOpen: Boolean = false,
+    val isLicenseDialogOpen: Boolean = false,
     val isServerDialogOpen: Boolean = false
 )

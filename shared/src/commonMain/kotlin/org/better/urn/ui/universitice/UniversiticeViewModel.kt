@@ -130,6 +130,28 @@ class UniversiticeViewModel(
         fetchData(url, token)
     }
 
+    fun logout() {
+        preferences.logout()
+        _uiState.value = UniversiticeUiState(
+            isLogged = false,
+            token = "",
+            moodleUrl = preferences.moodleUrl,
+            hiddenCourseIds = persistentSetOf(),
+            courses = persistentListOf(),
+            filteredCourses = persistentListOf(),
+            user = null,
+            selectedCourse = null,
+            courseSections = persistentListOf(),
+            collapsedSectionIds = persistentSetOf(),
+            selectedFolderModule = null,
+            currentFolderPath = "/",
+            folderSearchQuery = "",
+            activeFileViewer = null,
+            downloadState = null,
+            errorMessage = null
+        )
+    }
+
     fun onSearchQueryChange(query: String) {
         val currentCourses = _uiState.value.courses
         _uiState.value = _uiState.value.copy(searchQuery = query)

@@ -21,20 +21,45 @@ class UserPreferences {
 
     var appTheme: AppTheme
         get() {
-            val themeName = settings.getString("app_theme", AppTheme.SYSTEM.name)
+            val fileTheme = CacheStorage.getString("app_theme")
+            val themeName = fileTheme ?: try {
+                settings.getStringOrNull("app_theme")
+            } catch (_: Exception) {
+                null
+            }
             return try {
-                AppTheme.valueOf(themeName)
+                if (themeName != null) AppTheme.valueOf(themeName) else AppTheme.SYSTEM
             } catch (_: Exception) {
                 AppTheme.SYSTEM
             }
         }
         set(value) {
-            settings.putString("app_theme", value.name)
+            try {
+                CacheStorage.saveString("app_theme", value.name)
+            } catch (_: Exception) {}
+            try {
+                settings.putString("app_theme", value.name)
+            } catch (_: Exception) {}
         }
 
     var moodleUrl: String
-        get() = settings.getString("moodle_url", "https://universitice.univ-rouen.fr")
-        set(value) = settings.putString("moodle_url", value)
+        get() {
+            val fileUrl = CacheStorage.getString("moodle_url")
+            val url = fileUrl ?: try {
+                settings.getStringOrNull("moodle_url")
+            } catch (_: Exception) {
+                null
+            }
+            return url.takeIf { !it.isNullOrBlank() } ?: "https://universitice.univ-rouen.fr"
+        }
+        set(value) {
+            try {
+                CacheStorage.saveString("moodle_url", value)
+            } catch (_: Exception) {}
+            try {
+                settings.putString("moodle_url", value)
+            } catch (_: Exception) {}
+        }
 
     var moodleToken: String
         get() {
@@ -96,12 +121,16 @@ class UserPreferences {
         }
 
     fun logout() {
+        val currentTheme = appTheme
+        val currentUrl = moodleUrl
         moodleToken = ""
         moodlePassport = null
         SecureStorage.removeSecureString("moodle_token")
         CacheStorage.clear()
         cachedUser = null
         cachedCourses = emptyList()
+        appTheme = currentTheme
+        moodleUrl = currentUrl
     }
 
     fun getCachedCourseSections(courseId: Int): List<CourseSection> {

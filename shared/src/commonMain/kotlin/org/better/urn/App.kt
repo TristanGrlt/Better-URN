@@ -2,6 +2,7 @@ package org.better.urn
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -14,19 +15,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.better.urn.data.AppTheme
-import org.better.urn.data.UserPreferences
 import org.better.urn.data.ViewableFile
 import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
+import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.ImageViewerOverlay
 import org.better.urn.ui.components.M3DownloadNotificationBanner
 import org.better.urn.ui.components.PdfViewerOverlay
@@ -115,8 +117,10 @@ fun App(
     deepLink: String? = null,
     onDeepLinkHandled: () -> Unit = {}
 ) {
-    val userPreferences = remember { UserPreferences() }
-    val isDark = when (userPreferences.appTheme) {
+    val settingsViewModel: SettingsViewModel = viewModel { SettingsViewModel() }
+    val settingsState by settingsViewModel.uiState.collectAsState()
+
+    val isDark = when (settingsState.theme) {
         AppTheme.LIGHT -> false
         AppTheme.DARK -> true
         AppTheme.SYSTEM -> isSystemInDarkTheme()
@@ -152,7 +156,28 @@ fun App(
             }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
 
-            BackHandler(enabled = state.activeFileViewer == null && tabBackstack.size > 1) {
+            var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
+
+            LaunchedEffect(isSettingsOpen) {
+                if (isSettingsOpen) {
+                    settingsViewModel.refreshState()
+                }
+            }
+
+            LaunchedEffect(state.user) {
+                settingsViewModel.refreshState()
+            }
+
+            val onNavigateToSettings = {
+                settingsViewModel.refreshState()
+                isSettingsOpen = true
+            }
+
+            BackHandler(enabled = isSettingsOpen) {
+                isSettingsOpen = false
+            }
+
+            BackHandler(enabled = !isSettingsOpen && state.activeFileViewer == null && tabBackstack.size > 1) {
                 tabBackstack.removeAt(tabBackstack.lastIndex)
             }
 
@@ -207,36 +232,64 @@ fun App(
                                 onNavigateToSubfolder = { path -> universiticeViewModel.navigateToSubfolder(path) },
                                 onNavigateFolderUp = { universiticeViewModel.navigateFolderUp() },
                                 onFolderSearchQueryChange = { query -> universiticeViewModel.onFolderSearchQueryChange(query) },
-                                onDownloadAllFilesFolder = { module, path -> universiticeViewModel.downloadAllFilesInFolder(module, path) }
+                                onDownloadAllFilesFolder = { module, path -> universiticeViewModel.downloadAllFilesInFolder(module, path) },
+                                onProfileClick = onNavigateToSettings
                             )
                         }
                         AppScreen.IZLY -> {
-                            Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                BetterUrnTopBar(
+                                    title = "Izly",
+                                    onProfileClick = onNavigateToSettings
+                                )
+                                Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
+                            }
                         }
                         AppScreen.EDT -> {
-                            Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                BetterUrnTopBar(
+                                    title = "Emploi du temps",
+                                    onProfileClick = onNavigateToSettings
+                                )
+                                Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
+                            }
                         }
                         AppScreen.AUTRE -> {
-                            val settingsViewModel: SettingsViewModel = viewModel { SettingsViewModel() }
-                            val settingsState by settingsViewModel.uiState.collectAsState()
-                            SettingsScreen(
-                                state = settingsState,
-                                onThemeChanged = settingsViewModel::onThemeChanged,
-                                onServerUrlChanged = settingsViewModel::onServerUrlChanged,
-                                onClearCacheClicked = settingsViewModel::onClearCacheClicked,
-                                onLogoutClicked = settingsViewModel::onLogoutClicked,
-                                onToggleLegalDialog = settingsViewModel::onToggleLegalDialog,
-                                onToggleServerDialog = settingsViewModel::onToggleServerDialog,
-                                onBackClick = {
-                                    if (tabBackstack.size > 1) {
-                                        tabBackstack.removeAt(tabBackstack.lastIndex)
-                                    } else {
-                                        tabBackstack.clear()
-                                        tabBackstack.add(AppScreen.UNIVERSITICE)
-                                    }
-                                }
-                            )
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                BetterUrnTopBar(
+                                    title = "Autre",
+                                    onProfileClick = onNavigateToSettings
+                                )
+                                Text("Écran Autre en construction...", modifier = Modifier.padding(16.dp))
+                            }
                         }
+                    }
+                }
+
+                if (isSettingsOpen) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        SettingsScreen(
+                            state = settingsState,
+                            onThemeChanged = settingsViewModel::onThemeChanged,
+                            onServerUrlChanged = settingsViewModel::onServerUrlChanged,
+                            onClearCacheClicked = {
+                                settingsViewModel.onClearCacheClicked()
+                                universiticeViewModel.refresh()
+                            },
+                            onLogoutClicked = {
+                                settingsViewModel.onLogoutClicked()
+                                universiticeViewModel.logout()
+                                isSettingsOpen = false
+                            },
+                            onToggleLegalDialog = settingsViewModel::onToggleLegalDialog,
+                            onToggleLicenseDialog = settingsViewModel::onToggleLicenseDialog,
+                            onToggleServerDialog = settingsViewModel::onToggleServerDialog,
+                            onBackClick = { isSettingsOpen = false },
+                            onProfileClick = null
+                        )
                     }
                 }
 

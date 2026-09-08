@@ -124,6 +124,25 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun testOnToggleLicenseDialogTogglesAndExplicitlySetsState() {
+        val viewModel = SettingsViewModel(preferences)
+
+        assertFalse(viewModel.uiState.value.isLicenseDialogOpen)
+
+        viewModel.onToggleLicenseDialog()
+        assertTrue(viewModel.uiState.value.isLicenseDialogOpen)
+
+        viewModel.onToggleLicenseDialog()
+        assertFalse(viewModel.uiState.value.isLicenseDialogOpen)
+
+        viewModel.onToggleLicenseDialog(true)
+        assertTrue(viewModel.uiState.value.isLicenseDialogOpen)
+
+        viewModel.onToggleLicenseDialog(false)
+        assertFalse(viewModel.uiState.value.isLicenseDialogOpen)
+    }
+
+    @Test
     fun testOnToggleServerDialogTogglesAndExplicitlySetsState() {
         val viewModel = SettingsViewModel(preferences)
 

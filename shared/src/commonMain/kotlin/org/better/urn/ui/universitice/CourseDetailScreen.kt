@@ -73,7 +73,8 @@ fun CourseDetailScreen(
     onOpenFile: ((ViewableFile) -> Unit)? = null,
     onDownloadFile: ((ViewableFile) -> Unit)? = null,
     onOpenFolder: ((CourseModule) -> Unit)? = null,
-    downloadState: DownloadState? = null
+    downloadState: DownloadState? = null,
+    onProfileClick: (() -> Unit)? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberSaveable(course.id, saver = LazyListState.Saver) { LazyListState() }
@@ -88,7 +89,8 @@ fun CourseDetailScreen(
             onBackClick = onBackClick,
             onRefresh = onRefresh,
             isRefreshing = isLoading,
-            refreshContentDescription = "Actualiser le contenu du cours"
+            refreshContentDescription = "Actualiser le contenu du cours",
+            onProfileClick = onProfileClick
         )
 
         if (isLoading) {

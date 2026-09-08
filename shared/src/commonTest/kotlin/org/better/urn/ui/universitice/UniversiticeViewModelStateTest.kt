@@ -78,4 +78,22 @@ class UniversiticeViewModelStateTest {
         val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
         assertEquals("https://universitice.univ-rouen.fr", viewModel.uiState.value.moodleUrl)
     }
+
+    @Test
+    fun testLogoutResetsUiStateAndClearsSession() {
+        val viewModel = UniversiticeViewModel(Dispatchers.Unconfined)
+        viewModel.login("https://universitice.univ-rouen.fr", "token_test_123")
+
+        assertTrue(viewModel.uiState.value.isLogged)
+        assertEquals("token_test_123", viewModel.uiState.value.token)
+
+        viewModel.logout()
+
+        assertFalse(viewModel.uiState.value.isLogged)
+        assertEquals("", viewModel.uiState.value.token)
+        assertNull(viewModel.uiState.value.user)
+        assertTrue(viewModel.uiState.value.courses.isEmpty())
+        assertNull(viewModel.uiState.value.selectedCourse)
+        assertNull(viewModel.uiState.value.activeFileViewer)
+    }
 }

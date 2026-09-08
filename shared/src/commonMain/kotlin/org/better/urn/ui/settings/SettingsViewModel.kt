@@ -51,6 +51,11 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(isLegalDialogOpen = nextState)
     }
 
+    fun onToggleLicenseDialog(isOpen: Boolean? = null) {
+        val nextState = isOpen ?: !_uiState.value.isLicenseDialogOpen
+        _uiState.value = _uiState.value.copy(isLicenseDialogOpen = nextState)
+    }
+
     fun onToggleServerDialog(isOpen: Boolean? = null) {
         val nextState = isOpen ?: !_uiState.value.isServerDialogOpen
         _uiState.value = _uiState.value.copy(isServerDialogOpen = nextState)
