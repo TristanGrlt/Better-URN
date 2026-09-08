@@ -33,6 +33,8 @@ import org.better.urn.ui.components.PdfViewerOverlay
 import org.better.urn.ui.components.VideoPlayerOverlay
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
+import org.better.urn.ui.settings.SettingsScreen
+import org.better.urn.ui.settings.SettingsViewModel
 import org.better.urn.ui.universitice.UniversiticeScreen
 import org.better.urn.ui.universitice.UniversiticeViewModel
 
@@ -215,7 +217,25 @@ fun App(
                             Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
                         }
                         AppScreen.AUTRE -> {
-                            Text("Autres options...", modifier = Modifier.padding(16.dp))
+                            val settingsViewModel: SettingsViewModel = viewModel { SettingsViewModel() }
+                            val settingsState by settingsViewModel.uiState.collectAsState()
+                            SettingsScreen(
+                                state = settingsState,
+                                onThemeChanged = settingsViewModel::onThemeChanged,
+                                onServerUrlChanged = settingsViewModel::onServerUrlChanged,
+                                onClearCacheClicked = settingsViewModel::onClearCacheClicked,
+                                onLogoutClicked = settingsViewModel::onLogoutClicked,
+                                onToggleLegalDialog = settingsViewModel::onToggleLegalDialog,
+                                onToggleServerDialog = settingsViewModel::onToggleServerDialog,
+                                onBackClick = {
+                                    if (tabBackstack.size > 1) {
+                                        tabBackstack.removeAt(tabBackstack.lastIndex)
+                                    } else {
+                                        tabBackstack.clear()
+                                        tabBackstack.add(AppScreen.UNIVERSITICE)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
