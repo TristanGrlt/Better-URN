@@ -109,6 +109,7 @@ kotlin {
             implementation("org.openjfx:javafx-base:21.0.2:$javafxClassifier")
             implementation("org.openjfx:javafx-swing:21.0.2:$javafxClassifier")
             implementation("org.apache.pdfbox:pdfbox:3.0.8")
+            implementation(libs.kotlinx.datetime)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -128,11 +129,14 @@ kotlin {
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
+            api(libs.kotlinx.datetime)
             implementation("media.kamel:kamel-image:0.9.4")
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+            implementation(libs.kotlinx.datetime)
         }
     }
 }

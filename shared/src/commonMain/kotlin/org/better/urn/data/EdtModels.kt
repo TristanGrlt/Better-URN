@@ -21,5 +21,6 @@ data class EdtEvent(
     val startMs: Long,
     val endMs: Long,
     val location: String,
-    val colorHex: String
+    val colorHex: String,
+    val isManual: Boolean = false
 )
