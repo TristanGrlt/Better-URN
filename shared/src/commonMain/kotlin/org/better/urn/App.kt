@@ -33,6 +33,7 @@ import org.better.urn.ui.components.ImageViewerOverlay
 import org.better.urn.ui.components.M3DownloadNotificationBanner
 import org.better.urn.ui.components.PdfViewerOverlay
 import org.better.urn.ui.components.VideoPlayerOverlay
+import org.better.urn.ui.edt.EdtScreen
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
 import org.better.urn.ui.settings.SettingsScreen
@@ -246,13 +247,9 @@ fun App(
                             }
                         }
                         AppScreen.EDT -> {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                BetterUrnTopBar(
-                                    title = "Emploi du temps",
-                                    onProfileClick = onNavigateToSettings
-                                )
-                                Text("Emploi du temps en construction...", modifier = Modifier.padding(16.dp))
-                            }
+                            EdtScreen(
+                                onProfileClick = onNavigateToSettings
+                            )
                         }
                         AppScreen.AUTRE -> {
                             Column(modifier = Modifier.fillMaxSize()) {
