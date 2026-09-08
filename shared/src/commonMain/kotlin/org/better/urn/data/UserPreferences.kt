@@ -19,6 +19,19 @@ class UserPreferences {
         isLenient = true
     }
 
+    var appTheme: AppTheme
+        get() {
+            val themeName = settings.getString("app_theme", AppTheme.SYSTEM.name)
+            return try {
+                AppTheme.valueOf(themeName)
+            } catch (_: Exception) {
+                AppTheme.SYSTEM
+            }
+        }
+        set(value) {
+            settings.putString("app_theme", value.name)
+        }
+
     var moodleUrl: String
         get() = settings.getString("moodle_url", "https://universitice.univ-rouen.fr")
         set(value) = settings.putString("moodle_url", value)
@@ -75,8 +88,21 @@ class UserPreferences {
             try { json.decodeFromString(it) } catch (e: Exception) { emptyList() } 
         } ?: emptyList()
         set(value) {
-            CacheStorage.saveString("cached_courses", json.encodeToString(value))
+            if (value.isEmpty()) {
+                CacheStorage.remove("cached_courses")
+            } else {
+                CacheStorage.saveString("cached_courses", json.encodeToString(value))
+            }
         }
+
+    fun logout() {
+        moodleToken = ""
+        moodlePassport = null
+        SecureStorage.removeSecureString("moodle_token")
+        CacheStorage.clear()
+        cachedUser = null
+        cachedCourses = emptyList()
+    }
 
     fun getCachedCourseSections(courseId: Int): List<CourseSection> {
         val key = "cached_course_sections_$courseId"

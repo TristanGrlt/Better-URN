@@ -333,9 +333,7 @@ class UniversiticeViewModel(
     }
 
     private fun handleTokenExpiration(message: String?) {
-        preferences.moodleToken = ""
-        preferences.cachedUser = null
-        preferences.cachedCourses = emptyList()
+        preferences.logout()
 
         val displayMsg = if (!message.isNullOrBlank()) {
             "Votre session Moodle a expiré ($message). Veuillez vous reconnecter."

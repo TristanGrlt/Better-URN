@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.better.urn.data.AppTheme
+import org.better.urn.data.UserPreferences
 import org.better.urn.data.ViewableFile
 import org.better.urn.data.ViewableFileType
 import org.better.urn.ui.MainLayout
@@ -110,8 +113,15 @@ fun App(
     deepLink: String? = null,
     onDeepLinkHandled: () -> Unit = {}
 ) {
+    val userPreferences = remember { UserPreferences() }
+    val isDark = when (userPreferences.appTheme) {
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+    }
+
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors
+        colorScheme = if (isDark) DarkColors else LightColors
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
             val universiticeViewModel: UniversiticeViewModel = viewModel { UniversiticeViewModel() }
