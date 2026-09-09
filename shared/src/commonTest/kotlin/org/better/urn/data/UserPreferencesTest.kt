@@ -19,6 +19,7 @@ class UserPreferencesTest {
         preferences.appTheme = AppTheme.SYSTEM
         preferences.defaultTab = AppScreen.UNIVERSITICE
         preferences.edtDefaultView = EdtViewMode.AGENDA
+        preferences.edtWeekDays = EdtWeekDays.SEVEN
     }
 
     @Test
@@ -67,6 +68,21 @@ class UserPreferencesTest {
     }
 
     @Test
+    fun testEdtWeekDaysPersistence() {
+        assertEquals(EdtWeekDays.SEVEN, preferences.edtWeekDays)
+
+        preferences.edtWeekDays = EdtWeekDays.FIVE
+        assertEquals(EdtWeekDays.FIVE, preferences.edtWeekDays)
+
+        val newPrefs = UserPreferences()
+        assertEquals(EdtWeekDays.FIVE, newPrefs.edtWeekDays)
+
+        preferences.edtWeekDays = EdtWeekDays.SIX
+        assertEquals(EdtWeekDays.SIX, preferences.edtWeekDays)
+        assertEquals(EdtWeekDays.SIX, newPrefs.edtWeekDays)
+    }
+
+    @Test
     fun testLogoutClearsSensitiveDataAndCache() {
         preferences.moodleToken = "secret_moodle_token_999"
         preferences.moodlePassport = "passport_12345"
@@ -112,6 +128,7 @@ class UserPreferencesTest {
         preferences.appTheme = AppTheme.DARK
         preferences.defaultTab = AppScreen.EDT
         preferences.edtDefaultView = EdtViewMode.SEMAINE
+        preferences.edtWeekDays = EdtWeekDays.FIVE
         preferences.moodleToken = "token_to_clear"
 
         preferences.logout()
@@ -120,5 +137,6 @@ class UserPreferencesTest {
         assertEquals(AppTheme.DARK, preferences.appTheme)
         assertEquals(AppScreen.EDT, preferences.defaultTab)
         assertEquals(EdtViewMode.SEMAINE, preferences.edtDefaultView)
+        assertEquals(EdtWeekDays.FIVE, preferences.edtWeekDays)
     }
 }

@@ -249,7 +249,8 @@ fun App(
                         AppScreen.EDT -> {
                             EdtScreen(
                                 onProfileClick = onNavigateToSettings,
-                                initialViewMode = settingsState.edtDefaultView
+                                initialViewMode = settingsState.edtDefaultView,
+                                weekDays = settingsState.edtWeekDays
                             )
                         }
                         AppScreen.AUTRE -> {
@@ -274,6 +275,7 @@ fun App(
                             onThemeChanged = settingsViewModel::onThemeChanged,
                             onDefaultTabChanged = settingsViewModel::onDefaultTabChanged,
                             onEdtDefaultViewChanged = settingsViewModel::onEdtDefaultViewChanged,
+                            onEdtWeekDaysChanged = settingsViewModel::onEdtWeekDaysChanged,
                             onServerUrlChanged = settingsViewModel::onServerUrlChanged,
                             onClearCacheClicked = {
                                 settingsViewModel.onClearCacheClicked()

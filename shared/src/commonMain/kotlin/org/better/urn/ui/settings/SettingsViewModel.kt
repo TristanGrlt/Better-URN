@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
 import org.better.urn.data.EdtViewMode
+import org.better.urn.data.EdtWeekDays
 import org.better.urn.data.UserPreferences
 import org.better.urn.ui.navigation.AppScreen
 
@@ -24,6 +25,7 @@ class SettingsViewModel(
             theme = preferences.appTheme,
             defaultTab = preferences.defaultTab,
             edtDefaultView = preferences.edtDefaultView,
+            edtWeekDays = preferences.edtWeekDays,
             isLegalDialogOpen = false,
             isServerDialogOpen = false
         )
@@ -43,6 +45,11 @@ class SettingsViewModel(
     fun onEdtDefaultViewChanged(mode: EdtViewMode) {
         preferences.edtDefaultView = mode
         _uiState.value = _uiState.value.copy(edtDefaultView = mode)
+    }
+
+    fun onEdtWeekDaysChanged(weekDays: EdtWeekDays) {
+        preferences.edtWeekDays = weekDays
+        _uiState.value = _uiState.value.copy(edtWeekDays = weekDays)
     }
 
     fun onServerUrlChanged(url: String) {
@@ -81,7 +88,8 @@ class SettingsViewModel(
             moodleUrl = preferences.moodleUrl,
             theme = preferences.appTheme,
             defaultTab = preferences.defaultTab,
-            edtDefaultView = preferences.edtDefaultView
+            edtDefaultView = preferences.edtDefaultView,
+            edtWeekDays = preferences.edtWeekDays
         )
     }
 }

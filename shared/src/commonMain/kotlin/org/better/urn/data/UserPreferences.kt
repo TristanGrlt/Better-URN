@@ -89,6 +89,29 @@ class UserPreferences {
             } catch (_: Exception) {}
         }
 
+    var edtWeekDays: EdtWeekDays
+        get() {
+            val fileDays = CacheStorage.getString("edt_week_days")
+            val daysName = fileDays ?: try {
+                settings.getStringOrNull("edt_week_days")
+            } catch (_: Exception) {
+                null
+            }
+            return try {
+                if (daysName != null) EdtWeekDays.valueOf(daysName) else EdtWeekDays.SEVEN
+            } catch (_: Exception) {
+                EdtWeekDays.SEVEN
+            }
+        }
+        set(value) {
+            try {
+                CacheStorage.saveString("edt_week_days", value.name)
+            } catch (_: Exception) {}
+            try {
+                settings.putString("edt_week_days", value.name)
+            } catch (_: Exception) {}
+        }
+
     var moodleUrl: String
         get() {
             val fileUrl = CacheStorage.getString("moodle_url")
@@ -172,6 +195,7 @@ class UserPreferences {
         val currentUrl = moodleUrl
         val currentDefaultTab = defaultTab
         val currentEdtDefaultView = edtDefaultView
+        val currentEdtWeekDays = edtWeekDays
         moodleToken = ""
         moodlePassport = null
         SecureStorage.removeSecureString("moodle_token")
@@ -182,6 +206,7 @@ class UserPreferences {
         moodleUrl = currentUrl
         defaultTab = currentDefaultTab
         edtDefaultView = currentEdtDefaultView
+        edtWeekDays = currentEdtWeekDays
     }
 
     fun getCachedCourseSections(courseId: Int): List<CourseSection> {

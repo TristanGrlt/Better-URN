@@ -80,13 +80,15 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.rememberModalBottomSheetState
 import org.better.urn.data.EdtViewMode
+import org.better.urn.data.EdtWeekDays
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EdtScreen(
     onProfileClick: (() -> Unit)? = null,
     viewModel: EdtViewModel = viewModel { EdtViewModel() },
-    initialViewMode: EdtViewMode = EdtViewMode.AGENDA
+    initialViewMode: EdtViewMode = EdtViewMode.AGENDA,
+    weekDays: EdtWeekDays = EdtWeekDays.SEVEN
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val timetables by viewModel.timetables.collectAsState()
@@ -422,7 +424,8 @@ fun EdtScreen(
                                                     pagerState = pagerState,
                                                     pendingTaskSignatures = pendingTaskSignatures,
                                                     onEventClick = { event -> selectedEventForDetail = event },
-                                                    modifier = Modifier.fillMaxSize()
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    numDays = weekDays.dayCount
                                                 )
                                             }
                                         }

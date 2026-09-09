@@ -3,6 +3,7 @@ package org.better.urn.ui.settings
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
 import org.better.urn.data.EdtViewMode
+import org.better.urn.data.EdtWeekDays
 import org.better.urn.data.MoodleUser
 import org.better.urn.data.UserPreferences
 import org.better.urn.ui.navigation.AppScreen
@@ -25,6 +26,7 @@ class SettingsViewModelTest {
         preferences.appTheme = AppTheme.SYSTEM
         preferences.defaultTab = AppScreen.UNIVERSITICE
         preferences.edtDefaultView = EdtViewMode.AGENDA
+        preferences.edtWeekDays = EdtWeekDays.SEVEN
         preferences.moodleUrl = "https://universitice.univ-rouen.fr"
         CacheStorage.clear()
     }
@@ -37,6 +39,7 @@ class SettingsViewModelTest {
         preferences.appTheme = AppTheme.DARK
         preferences.defaultTab = AppScreen.EDT
         preferences.edtDefaultView = EdtViewMode.SEMAINE
+        preferences.edtWeekDays = EdtWeekDays.FIVE
 
         val viewModel = SettingsViewModel(preferences)
         val state = viewModel.uiState.value
@@ -46,6 +49,7 @@ class SettingsViewModelTest {
         assertEquals(AppTheme.DARK, state.theme)
         assertEquals(AppScreen.EDT, state.defaultTab)
         assertEquals(EdtViewMode.SEMAINE, state.edtDefaultView)
+        assertEquals(EdtWeekDays.FIVE, state.edtWeekDays)
         assertFalse(state.isLegalDialogOpen)
         assertFalse(state.isServerDialogOpen)
     }
@@ -99,6 +103,23 @@ class SettingsViewModelTest {
         viewModel.onEdtDefaultViewChanged(EdtViewMode.AGENDA)
         assertEquals(EdtViewMode.AGENDA, viewModel.uiState.value.edtDefaultView)
         assertEquals(EdtViewMode.AGENDA, preferences.edtDefaultView)
+    }
+
+    @Test
+    fun testOnEdtWeekDaysChangedUpdatesStateAndPreferences() {
+        val viewModel = SettingsViewModel(preferences)
+
+        viewModel.onEdtWeekDaysChanged(EdtWeekDays.FIVE)
+        assertEquals(EdtWeekDays.FIVE, viewModel.uiState.value.edtWeekDays)
+        assertEquals(EdtWeekDays.FIVE, preferences.edtWeekDays)
+
+        viewModel.onEdtWeekDaysChanged(EdtWeekDays.SIX)
+        assertEquals(EdtWeekDays.SIX, viewModel.uiState.value.edtWeekDays)
+        assertEquals(EdtWeekDays.SIX, preferences.edtWeekDays)
+
+        viewModel.onEdtWeekDaysChanged(EdtWeekDays.SEVEN)
+        assertEquals(EdtWeekDays.SEVEN, viewModel.uiState.value.edtWeekDays)
+        assertEquals(EdtWeekDays.SEVEN, preferences.edtWeekDays)
     }
 
     @Test
@@ -210,6 +231,7 @@ class SettingsViewModelTest {
         preferences.appTheme = AppTheme.DARK
         preferences.defaultTab = AppScreen.EDT
         preferences.edtDefaultView = EdtViewMode.SEMAINE
+        preferences.edtWeekDays = EdtWeekDays.SIX
         preferences.moodleUrl = "https://updated.moodle.com"
         val user = MoodleUser(userid = 400, fullname = "David Guetta", userpictureurl = "")
         preferences.cachedUser = user
@@ -220,6 +242,7 @@ class SettingsViewModelTest {
         assertEquals(AppTheme.DARK, state.theme)
         assertEquals(AppScreen.EDT, state.defaultTab)
         assertEquals(EdtViewMode.SEMAINE, state.edtDefaultView)
+        assertEquals(EdtWeekDays.SIX, state.edtWeekDays)
         assertEquals("https://updated.moodle.com", state.moodleUrl)
         assertEquals(user, state.currentUser)
     }

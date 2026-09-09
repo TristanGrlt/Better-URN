@@ -57,6 +57,7 @@ import androidx.compose.material.icons.rounded.Tab
 import org.better.urn.BuildKonfig
 import org.better.urn.data.AppTheme
 import org.better.urn.data.EdtViewMode
+import org.better.urn.data.EdtWeekDays
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.LegalBottomSheet
 import org.better.urn.ui.components.LicenseBottomSheet
@@ -72,6 +73,7 @@ fun SettingsScreen(
     onThemeChanged: (AppTheme) -> Unit,
     onDefaultTabChanged: (AppScreen) -> Unit = {},
     onEdtDefaultViewChanged: (EdtViewMode) -> Unit = {},
+    onEdtWeekDaysChanged: (EdtWeekDays) -> Unit = {},
     onServerUrlChanged: (String) -> Unit,
     onClearCacheClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
@@ -411,6 +413,60 @@ fun SettingsScreen(
                                     ) {
                                         Text(
                                             text = mode.label,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DateRange,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Jours affichés (vue Semaine)",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Nombre de jours affichés sur la grille hebdomadaire",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                EdtWeekDays.entries.forEachIndexed { index, option ->
+                                    SegmentedButton(
+                                        selected = state.edtWeekDays == option,
+                                        onClick = { onEdtWeekDaysChanged(option) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = EdtWeekDays.entries.size
+                                        )
+                                    ) {
+                                        Text(
+                                            text = option.label,
                                             style = MaterialTheme.typography.labelMedium
                                         )
                                     }
