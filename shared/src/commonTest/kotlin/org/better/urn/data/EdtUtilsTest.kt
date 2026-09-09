@@ -1,6 +1,7 @@
 package org.better.urn.data
 
 import androidx.compose.ui.graphics.Color
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
@@ -71,9 +72,9 @@ class EdtUtilsTest {
 
     @Test
     fun testFormatShortDayName() {
-        assertEquals("LUN.", formatShortDayName(kotlinx.datetime.DayOfWeek.MONDAY))
-        assertEquals("MAR.", formatShortDayName(kotlinx.datetime.DayOfWeek.TUESDAY))
-        assertEquals("DIM.", formatShortDayName(kotlinx.datetime.DayOfWeek.SUNDAY))
+        assertEquals("LUN.", formatShortDayName(DayOfWeek.MONDAY))
+        assertEquals("MAR.", formatShortDayName(DayOfWeek.TUESDAY))
+        assertEquals("DIM.", formatShortDayName(DayOfWeek.SUNDAY))
     }
 
     @Test
@@ -296,5 +297,48 @@ class EdtUtilsTest {
 
         val filtered = filterAgendaEvents(events = emptyList(), today = today, timeZone = tz)
         assertTrue(filtered.isEmpty())
+    }
+
+    @Test
+    fun testCalculateEventPositions7DaysIncludesSaturdayAndSunday() {
+        val tz = TimeZone.UTC
+        val weekStart = LocalDate(2026, 9, 14) // Monday
+
+        val saturday10am = LocalDateTime(2026, Month.SEPTEMBER, 19, 10, 0).toInstant(tz).toEpochMilliseconds()
+        val saturday12pm = LocalDateTime(2026, Month.SEPTEMBER, 19, 12, 0).toInstant(tz).toEpochMilliseconds()
+
+        val sunday2pm = LocalDateTime(2026, Month.SEPTEMBER, 20, 14, 0).toInstant(tz).toEpochMilliseconds()
+        val sunday4pm = LocalDateTime(2026, Month.SEPTEMBER, 20, 16, 0).toInstant(tz).toEpochMilliseconds()
+
+        val satEvent = EdtEvent("sat", "tt", "Samedi Course", saturday10am, saturday12pm, "Room S", "#FF0000")
+        val sunEvent = EdtEvent("sun", "tt", "Dimanche Course", sunday2pm, sunday4pm, "Room D", "#00FF00")
+
+        val events = listOf(satEvent, sunEvent)
+        val positions = calculateEventPositions(
+            events = events,
+            weekStart = weekStart,
+            numDays = 7,
+            timeZone = tz,
+            startHour = 8,
+            endHour = 20
+        )
+
+        assertEquals(2, positions.size)
+
+        val satPos = positions.first { it.event.id == "sat" }
+        assertEquals(5, satPos.dayIndex) // Saturday = 5th day from Monday (0-indexed)
+        assertEquals(120, satPos.startMinutesFromStartHour) // 10:00 - 8:00 = 120 min
+        assertEquals(120, satPos.durationMinutes)
+
+        val sunPos = positions.first { it.event.id == "sun" }
+        assertEquals(6, sunPos.dayIndex) // Sunday = 6th day from Monday (0-indexed)
+        assertEquals(360, sunPos.startMinutesFromStartHour) // 14:00 - 8:00 = 360 min
+        assertEquals(120, sunPos.durationMinutes)
+    }
+
+    @Test
+    fun testFormatShortDayNameSaturdayAndSunday() {
+        assertEquals("SAM.", formatShortDayName(DayOfWeek.SATURDAY))
+        assertEquals("DIM.", formatShortDayName(DayOfWeek.SUNDAY))
     }
 }

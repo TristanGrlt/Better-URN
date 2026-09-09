@@ -397,23 +397,15 @@ fun EdtScreen(
                                                     )
                                                 }
                                             } else {
-                                                HorizontalPager(
-                                                    state = pagerState,
+                                                EdtWeekView(
+                                                    events = state.events,
+                                                    initialWeekStart = initialWeekStart,
+                                                    initialPage = initialPage,
+                                                    pagerState = pagerState,
+                                                    pendingTaskSignatures = pendingTaskSignatures,
+                                                    onEventClick = { event -> selectedEventForDetail = event },
                                                     modifier = Modifier.fillMaxSize()
-                                                ) { page ->
-                                                    val weekOffset = page - initialPage
-                                                    val pageWeekStart = remember(initialWeekStart, weekOffset) {
-                                                        LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
-                                                    }
-
-                                                    EdtWeekView(
-                                                        events = state.events,
-                                                        weekStart = pageWeekStart,
-                                                        pendingTaskSignatures = pendingTaskSignatures,
-                                                        onEventClick = { event -> selectedEventForDetail = event },
-                                                        modifier = Modifier.fillMaxSize()
-                                                    )
-                                                }
+                                                )
                                             }
                                         }
                                         is EdtUiState.Error -> {

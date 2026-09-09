@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -16,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,8 +33,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
-import kotlin.time.Instant
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -38,9 +40,121 @@ import org.better.urn.data.EdtEvent
 import org.better.urn.data.EventPosition
 import org.better.urn.data.calculateEventPositions
 import org.better.urn.data.formatShortDayName
+import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.toEndOfDayEpochMs
 import org.better.urn.data.toStartOfDayEpochMs
 
+/**
+ * Renders the interactive weekly timetable grid with off-screen prefetching and a static time axis.
+ */
+@Composable
+fun EdtWeekView(
+    events: List<EdtEvent>,
+    modifier: Modifier = Modifier,
+    initialWeekStart: LocalDate = remember {
+        val tz = TimeZone.currentSystemDefault()
+        val today = Clock.System.now().toLocalDateTime(tz).date
+        getMondayOfWeek(today)
+    },
+    initialPage: Int = 1000,
+    pageCount: Int = 2000,
+    pagerState: PagerState = rememberPagerState(initialPage = initialPage) { pageCount },
+    pendingTaskSignatures: Set<String> = emptySet(),
+    onEventClick: ((EdtEvent) -> Unit)? = null,
+    startHour: Int = 8,
+    endHour: Int = 20,
+    hourHeight: Dp = 60.dp,
+    timeAxisWidth: Dp = 44.dp,
+    numDays: Int = 7
+) {
+    val timeZone = remember { TimeZone.currentSystemDefault() }
+    val today = remember { Clock.System.now().toLocalDateTime(timeZone).date }
+
+    val totalHours = endHour - startHour
+    val gridHeight = hourHeight * totalHours
+
+    Column(modifier = modifier.fillMaxSize()) {
+        // Sticky Day Headers: Top row with static corner spacer and day names pager
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Spacer(modifier = Modifier.width(timeAxisWidth))
+
+                HorizontalPager(
+                    state = pagerState,
+                    beyondViewportPageCount = 1,
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    val weekOffset = page - initialPage
+                    val pageWeekStart = remember(initialWeekStart, weekOffset) {
+                        LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+                    }
+
+                    WeekHeaderRow(
+                        weekStart = pageWeekStart,
+                        numDays = numDays,
+                        today = today
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        val scrollState = rememberScrollState()
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            // Static Time Axis Column on the left (remains static during horizontal week swipes)
+            StaticTimeAxisColumn(
+                startHour = startHour,
+                endHour = endHour,
+                hourHeight = hourHeight,
+                timeAxisWidth = timeAxisWidth,
+                gridHeight = gridHeight
+            )
+
+            // Main Week Pager containing day columns and event cards
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(gridHeight)
+            ) { page ->
+                val weekOffset = page - initialPage
+                val pageWeekStart = remember(initialWeekStart, weekOffset) {
+                    LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+                }
+
+                WeekGridPage(
+                    events = events,
+                    weekStart = pageWeekStart,
+                    numDays = numDays,
+                    pendingTaskSignatures = pendingTaskSignatures,
+                    onEventClick = onEventClick,
+                    startHour = startHour,
+                    endHour = endHour,
+                    hourHeight = hourHeight,
+                    timeZone = timeZone
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Backward-compatible overload for displaying a single fixed week grid without internal pager controls.
+ */
 @Composable
 fun EdtWeekView(
     events: List<EdtEvent>,
@@ -51,13 +165,115 @@ fun EdtWeekView(
     startHour: Int = 8,
     endHour: Int = 20,
     hourHeight: Dp = 60.dp,
-    timeAxisWidth: Dp = 44.dp
+    timeAxisWidth: Dp = 44.dp,
+    numDays: Int = 7
 ) {
-    val timeZone = remember { TimeZone.currentSystemDefault() }
-    val today = remember { Clock.System.now().toLocalDateTime(timeZone).date }
+    val singlePagerState = rememberPagerState(initialPage = 0) { 1 }
+    EdtWeekView(
+        events = events,
+        modifier = modifier,
+        initialWeekStart = weekStart,
+        initialPage = 0,
+        pageCount = 1,
+        pagerState = singlePagerState,
+        pendingTaskSignatures = pendingTaskSignatures,
+        onEventClick = onEventClick,
+        startHour = startHour,
+        endHour = endHour,
+        hourHeight = hourHeight,
+        timeAxisWidth = timeAxisWidth,
+        numDays = numDays
+    )
+}
 
-    val weekEnd = remember(weekStart) {
-        LocalDate.fromEpochDays(weekStart.toEpochDays() + 6)
+@Composable
+private fun StaticTimeAxisColumn(
+    startHour: Int,
+    endHour: Int,
+    hourHeight: Dp,
+    timeAxisWidth: Dp,
+    gridHeight: Dp,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .width(timeAxisWidth)
+            .height(gridHeight)
+    ) {
+        for (hour in startHour until endHour) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(hourHeight),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Text(
+                    text = "${hour.toString().padStart(2, '0')}:00",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekHeaderRow(
+    weekStart: LocalDate,
+    numDays: Int,
+    today: LocalDate
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        for (d in 0 until numDays) {
+            val date = remember(weekStart, d) {
+                LocalDate.fromEpochDays(weekStart.toEpochDays() + d)
+            }
+            val isToday = date == today
+
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = formatShortDayName(date.dayOfWeek),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false
+                )
+                Text(
+                    text = date.day.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekGridPage(
+    events: List<EdtEvent>,
+    weekStart: LocalDate,
+    numDays: Int,
+    pendingTaskSignatures: Set<String>,
+    onEventClick: ((EdtEvent) -> Unit)?,
+    startHour: Int,
+    endHour: Int,
+    hourHeight: Dp,
+    timeZone: TimeZone
+) {
+    val weekEnd = remember(weekStart, numDays) {
+        LocalDate.fromEpochDays(weekStart.toEpochDays() + numDays - 1)
     }
 
     val weekStartMs = remember(weekStart, timeZone) {
@@ -71,23 +287,6 @@ fun EdtWeekView(
         events.filter { it.startMs in weekStartMs..weekEndMs }
     }
 
-    val hasSaturdayEvents = remember(weekEvents, timeZone) {
-        weekEvents.any { event ->
-            Instant.fromEpochMilliseconds(event.startMs).toLocalDateTime(timeZone).date.dayOfWeek == DayOfWeek.SATURDAY
-        }
-    }
-    val hasSundayEvents = remember(weekEvents, timeZone) {
-        weekEvents.any { event ->
-            Instant.fromEpochMilliseconds(event.startMs).toLocalDateTime(timeZone).date.dayOfWeek == DayOfWeek.SUNDAY
-        }
-    }
-
-    val numDays = when {
-        hasSundayEvents -> 7
-        hasSaturdayEvents -> 6
-        else -> 5
-    }
-
     val eventPositions = remember(weekEvents, weekStart, numDays, timeZone, startHour, endHour) {
         calculateEventPositions(
             events = weekEvents,
@@ -99,145 +298,46 @@ fun EdtWeekView(
         )
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        WeekHeaderRow(
-            weekStart = weekStart,
-            numDays = numDays,
-            today = today,
-            timeAxisWidth = timeAxisWidth
-        )
+    val totalHours = endHour - startHour
+    val gridOutlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawBehind {
+                val availableWidth = size.width
+                val colWidth = availableWidth / numDays
+                val hourHeightPx = hourHeight.toPx()
 
-        val scrollState = rememberScrollState()
-        val totalHours = endHour - startHour
-        val gridHeight = hourHeight * totalHours
+                for (i in 0..totalHours) {
+                    val y = i * hourHeightPx
+                    drawLine(
+                        color = gridOutlineColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = 1f
+                    )
+                }
 
-        val gridOutlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(gridHeight)
-                    .drawBehind {
-                        val timeAxisWidthPx = timeAxisWidth.toPx()
-                        val availableWidth = size.width - timeAxisWidthPx
-                        val colWidth = availableWidth / numDays
-                        val hourHeightPx = hourHeight.toPx()
-
-                        for (i in 0..totalHours) {
-                            val y = i * hourHeightPx
-                            drawLine(
-                                color = gridOutlineColor,
-                                start = Offset(0f, y),
-                                end = Offset(size.width, y),
-                                strokeWidth = 1f
-                            )
-                        }
-
-                        for (d in 0..numDays) {
-                            val x = timeAxisWidthPx + d * colWidth
-                            drawLine(
-                                color = gridOutlineColor,
-                                start = Offset(x, 0f),
-                                end = Offset(x, size.height),
-                                strokeWidth = 1f
-                            )
-                        }
-                    }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(timeAxisWidth)
-                        .height(gridHeight)
-                ) {
-                    for (hour in startHour until endHour) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(hourHeight),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            Text(
-                                text = "${hour.toString().padStart(2, '0')}:00",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
+                for (d in 0..numDays) {
+                    val x = d * colWidth
+                    drawLine(
+                        color = gridOutlineColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 1f
+                    )
                 }
             }
-
-            WeekEventsLayout(
-                eventPositions = eventPositions,
-                numDays = numDays,
-                timeAxisWidth = timeAxisWidth,
-                hourHeight = hourHeight,
-                totalHours = totalHours,
-                pendingTaskSignatures = pendingTaskSignatures,
-                onEventClick = onEventClick
-            )
-        }
-    }
-}
-
-@Composable
-private fun WeekHeaderRow(
-    weekStart: LocalDate,
-    numDays: Int,
-    today: LocalDate,
-    timeAxisWidth: Dp
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Spacer(modifier = Modifier.width(timeAxisWidth))
-
-            for (d in 0 until numDays) {
-                val date = remember(weekStart, d) {
-                    LocalDate.fromEpochDays(weekStart.toEpochDays() + d)
-                }
-                val isToday = date == today
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = formatShortDayName(date.dayOfWeek),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                    Text(
-                        text = date.day.toString(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
-            }
-        }
+        WeekEventsLayout(
+            eventPositions = eventPositions,
+            numDays = numDays,
+            hourHeight = hourHeight,
+            totalHours = totalHours,
+            pendingTaskSignatures = pendingTaskSignatures,
+            onEventClick = onEventClick
+        )
     }
 }
 
@@ -245,7 +345,6 @@ private fun WeekHeaderRow(
 private fun WeekEventsLayout(
     eventPositions: List<EventPosition>,
     numDays: Int,
-    timeAxisWidth: Dp,
     hourHeight: Dp,
     totalHours: Int,
     pendingTaskSignatures: Set<String>,
@@ -254,19 +353,20 @@ private fun WeekEventsLayout(
 ) {
     val density = LocalDensity.current
     val hourHeightPx = with(density) { hourHeight.toPx() }
-    val timeAxisWidthPx = with(density) { timeAxisWidth.toPx() }
     val pixelsPerMinute = hourHeightPx / 60f
     val totalGridHeightPx = totalHours * 60 * pixelsPerMinute
 
     Layout(
         content = {
             eventPositions.forEach { pos ->
-                EdtGridCard(
-                    event = pos.event,
-                    hasPendingTasks = pendingTaskSignatures.contains(pos.event.signature),
-                    onClick = if (onEventClick != null) { { onEventClick(pos.event) } } else null,
-                    modifier = Modifier
-                )
+                key(pos.event.signature) {
+                    EdtGridCard(
+                        event = pos.event,
+                        hasPendingTasks = pendingTaskSignatures.contains(pos.event.signature),
+                        onClick = if (onEventClick != null) { { onEventClick(pos.event) } } else null,
+                        modifier = Modifier
+                    )
+                }
             }
         },
         modifier = modifier
@@ -274,8 +374,7 @@ private fun WeekEventsLayout(
             .height(hourHeight * totalHours)
     ) { measurables, constraints ->
         val totalWidth = constraints.maxWidth
-        val availableWidth = (totalWidth - timeAxisWidthPx).coerceAtLeast(0f)
-        val columnWidth = availableWidth / numDays
+        val columnWidth = totalWidth.toFloat() / numDays
 
         val placeables = measurables.mapIndexed { index, measurable ->
             val pos = eventPositions[index]
@@ -287,7 +386,7 @@ private fun WeekEventsLayout(
             val childConstraints = Constraints.fixed(cardWidthPx, cardHeightPx)
             val placeable = measurable.measure(childConstraints)
 
-            val x = (timeAxisWidthPx + pos.dayIndex * columnWidth + pos.slotIndex * subColumnWidth + 1f).toInt()
+            val x = (pos.dayIndex * columnWidth + pos.slotIndex * subColumnWidth + 1f).toInt()
             val y = (pos.startMinutesFromStartHour * pixelsPerMinute).toInt()
 
             Triple(placeable, x, y)
