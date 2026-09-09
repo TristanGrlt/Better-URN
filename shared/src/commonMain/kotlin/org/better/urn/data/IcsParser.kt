@@ -35,6 +35,7 @@ object IcsParser {
             var uid: String? = null
             var summary: String? = null
             var location: String? = null
+            var description: String? = null
             var dtStartRaw: String? = null
             var dtStartTzId: String? = null
             var dtEndRaw: String? = null
@@ -64,6 +65,7 @@ object IcsParser {
                     "UID" -> uid = unescapedVal
                     "SUMMARY" -> summary = unescapedVal
                     "LOCATION" -> location = unescapedVal
+                    "DESCRIPTION" -> description = unescapedVal
                     "DTSTART" -> {
                         dtStartRaw = rawValue
                         dtStartTzId = tzId
@@ -78,6 +80,7 @@ object IcsParser {
             if (dtStartRaw != null && dtEndRaw != null) {
                 val title = summary ?: "Sans titre"
                 val loc = location ?: ""
+                val desc = description ?: ""
                 val color = generateColorFromSubject(title, isDarkTheme)
                 val startMs = parseIcsDateToEpochMs(dtStartRaw, dtStartTzId)
                 val endMs = parseIcsDateToEpochMs(dtEndRaw, dtEndTzId)
@@ -91,7 +94,8 @@ object IcsParser {
                         startMs = startMs,
                         endMs = endMs,
                         location = loc,
-                        colorHex = color
+                        colorHex = color,
+                        description = desc
                     )
                 )
             }

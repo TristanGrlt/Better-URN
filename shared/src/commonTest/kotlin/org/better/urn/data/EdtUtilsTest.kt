@@ -247,4 +247,25 @@ class EdtUtilsTest {
         assertEquals(1, p3.totalSlots)
         assertEquals(0, p3.slotIndex)
     }
+
+    @Test
+    fun testGenerateEventSignatureAndEventProperty() {
+        val title = "CM Maths TD1"
+        val startMs = 1700000000000L
+        val signature = generateEventSignature(title, startMs)
+
+        val expected = "${"Maths".hashCode()}_$startMs"
+        assertEquals(expected, signature)
+
+        val event = EdtEvent(
+            id = "e1",
+            timetableId = "tt1",
+            title = title,
+            startMs = startMs,
+            endMs = 1700003600000L,
+            location = "Amphi A",
+            colorHex = "#FF0000"
+        )
+        assertEquals(expected, event.signature)
+    }
 }

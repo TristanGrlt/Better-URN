@@ -14,6 +14,17 @@ data class Timetable(
 
 @Immutable
 @Serializable
+data class EdtTask(
+    val id: String = generateTaskId(),
+    val eventSignature: String,
+    val description: String,
+    val isDone: Boolean = false
+)
+
+private fun generateTaskId(): String = "task_${kotlin.time.Clock.System.now().toEpochMilliseconds()}_${(100000..999999).random()}"
+
+@Immutable
+@Serializable
 data class EdtEvent(
     val id: String,
     val timetableId: String,
@@ -22,5 +33,9 @@ data class EdtEvent(
     val endMs: Long,
     val location: String,
     val colorHex: String,
+    val description: String = "",
     val isManual: Boolean = false
-)
+) {
+    val signature: String
+        get() = generateEventSignature(title, startMs)
+}

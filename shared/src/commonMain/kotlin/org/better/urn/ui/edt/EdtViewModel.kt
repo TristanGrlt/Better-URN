@@ -10,6 +10,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.better.urn.data.CacheStorage
 import org.better.urn.data.EdtRepository
+import org.better.urn.data.EdtTask
 import org.better.urn.data.Timetable
 import org.better.urn.data.normalizeUrl
 
@@ -29,8 +30,12 @@ class EdtViewModel(
     private val _timetables = MutableStateFlow<List<Timetable>>(emptyList())
     val timetables: StateFlow<List<Timetable>> = _timetables.asStateFlow()
 
+    private val _tasks = MutableStateFlow<List<EdtTask>>(emptyList())
+    val tasks: StateFlow<List<EdtTask>> = _tasks.asStateFlow()
+
     init {
         loadSavedTimetables()
+        loadSavedTasks()
     }
 
     private fun loadSavedTimetables() {
@@ -53,6 +58,54 @@ class EdtViewModel(
             CacheStorage.saveString(KEY_TIMETABLES, jsonString)
         } catch (_: Exception) {
         }
+    }
+
+    private fun loadSavedTasks() {
+        val jsonString = CacheStorage.getString(KEY_TASKS)
+        if (!jsonString.isNullOrBlank()) {
+            try {
+                val savedTasks = json.decodeFromString<List<EdtTask>>(jsonString)
+                _tasks.value = savedTasks
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun saveTasks(tasks: List<EdtTask>) {
+        try {
+            val jsonString = json.encodeToString(tasks)
+            CacheStorage.saveString(KEY_TASKS, jsonString)
+        } catch (_: Exception) {
+        }
+    }
+
+    fun addTask(eventSignature: String, description: String) {
+        if (description.isBlank()) return
+        val newTask = EdtTask(
+            eventSignature = eventSignature,
+            description = description.trim()
+        )
+        val updatedList = _tasks.value + newTask
+        _tasks.value = updatedList
+        saveTasks(updatedList)
+    }
+
+    fun toggleTaskState(taskId: String) {
+        val updatedList = _tasks.value.map { task ->
+            if (task.id == taskId) {
+                task.copy(isDone = !task.isDone)
+            } else {
+                task
+            }
+        }
+        _tasks.value = updatedList
+        saveTasks(updatedList)
+    }
+
+    fun deleteTask(taskId: String) {
+        val updatedList = _tasks.value.filterNot { it.id == taskId }
+        _tasks.value = updatedList
+        saveTasks(updatedList)
     }
 
     fun addTimetable(name: String, url: String) {
@@ -112,5 +165,6 @@ class EdtViewModel(
 
     companion object {
         private const val KEY_TIMETABLES = "edt_timetables"
+        private const val KEY_TASKS = "edt_tasks"
     }
 }

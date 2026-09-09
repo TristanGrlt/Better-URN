@@ -69,6 +69,11 @@ import org.better.urn.ui.edt.components.EdtEventCard
 import org.better.urn.ui.edt.components.EdtWeekView
 import org.better.urn.ui.edt.components.TimetableManagerSheet
 
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import org.better.urn.data.EdtEvent
+import org.better.urn.ui.edt.components.CourseDetailSheet
+import org.better.urn.ui.edt.components.UpcomingTasksSheet
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EdtScreen(
@@ -77,9 +82,18 @@ fun EdtScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val timetables by viewModel.timetables.collectAsState()
+    val tasks by viewModel.tasks.collectAsState()
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showManagerSheet by remember { mutableStateOf(false) }
+    var showUpcomingTasksSheet by remember { mutableStateOf(false) }
+    var selectedEventForDetail by remember { mutableStateOf<EdtEvent?>(null) }
+
+    val pendingTaskSignatures = remember(tasks) {
+        tasks.filter { !it.isDone }.map { it.eventSignature }.toSet()
+    }
+
     val tabs = listOf("Agenda", "Semaine")
 
     Scaffold(
@@ -107,6 +121,12 @@ fun EdtScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showUpcomingTasksSheet = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Assignment,
+                            contentDescription = "Tâches à venir"
+                        )
+                    }
                     IconButton(onClick = { showManagerSheet = true }) {
                         Icon(
                             imageVector = Icons.Rounded.FilterList,
@@ -220,7 +240,12 @@ fun EdtScreen(
                                                     when (item) {
                                                         is AgendaDayItem.EventGroup -> {
                                                             if (item.events.size == 1) {
-                                                                EdtEventCard(event = item.events.first())
+                                                                val event = item.events.first()
+                                                                EdtEventCard(
+                                                                    event = event,
+                                                                    hasPendingTasks = pendingTaskSignatures.contains(event.signature),
+                                                                    onClick = { selectedEventForDetail = event }
+                                                                )
                                                             } else {
                                                                 Row(
                                                                     modifier = Modifier.fillMaxWidth(),
@@ -229,6 +254,8 @@ fun EdtScreen(
                                                                     item.events.forEach { event ->
                                                                         EdtEventCard(
                                                                             event = event,
+                                                                            hasPendingTasks = pendingTaskSignatures.contains(event.signature),
+                                                                            onClick = { selectedEventForDetail = event },
                                                                             modifier = Modifier.weight(1f)
                                                                         )
                                                                     }
@@ -363,6 +390,8 @@ fun EdtScreen(
                                             EdtWeekView(
                                                 events = state.events,
                                                 weekStart = pageWeekStart,
+                                                pendingTaskSignatures = pendingTaskSignatures,
+                                                onEventClick = { event -> selectedEventForDetail = event },
                                                 modifier = Modifier.fillMaxSize()
                                             )
                                         }
@@ -424,6 +453,28 @@ fun EdtScreen(
                 onToggle = { id -> viewModel.toggleVisibility(id) },
                 onDelete = { id -> viewModel.deleteTimetable(id) },
                 onDismiss = { showManagerSheet = false }
+            )
+        }
+
+        selectedEventForDetail?.let { event ->
+            CourseDetailSheet(
+                event = event,
+                tasks = tasks,
+                onAddTask = { description -> viewModel.addTask(event.signature, description) },
+                onToggleTask = { taskId -> viewModel.toggleTaskState(taskId) },
+                onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
+                onDismiss = { selectedEventForDetail = null }
+            )
+        }
+
+        if (showUpcomingTasksSheet) {
+            val eventsList = (uiState as? EdtUiState.Success)?.events ?: emptyList()
+            UpcomingTasksSheet(
+                tasks = tasks,
+                events = eventsList,
+                onToggleTask = { taskId -> viewModel.toggleTaskState(taskId) },
+                onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
+                onDismiss = { showUpcomingTasksSheet = false }
             )
         }
     }

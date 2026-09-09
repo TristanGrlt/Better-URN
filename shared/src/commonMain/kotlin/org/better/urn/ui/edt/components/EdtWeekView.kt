@@ -46,6 +46,8 @@ fun EdtWeekView(
     events: List<EdtEvent>,
     weekStart: LocalDate,
     modifier: Modifier = Modifier,
+    pendingTaskSignatures: Set<String> = emptySet(),
+    onEventClick: ((EdtEvent) -> Unit)? = null,
     startHour: Int = 8,
     endHour: Int = 20,
     hourHeight: Dp = 60.dp,
@@ -179,7 +181,9 @@ fun EdtWeekView(
                 numDays = numDays,
                 timeAxisWidth = timeAxisWidth,
                 hourHeight = hourHeight,
-                totalHours = totalHours
+                totalHours = totalHours,
+                pendingTaskSignatures = pendingTaskSignatures,
+                onEventClick = onEventClick
             )
         }
     }
@@ -244,6 +248,8 @@ private fun WeekEventsLayout(
     timeAxisWidth: Dp,
     hourHeight: Dp,
     totalHours: Int,
+    pendingTaskSignatures: Set<String>,
+    onEventClick: ((EdtEvent) -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -257,6 +263,8 @@ private fun WeekEventsLayout(
             eventPositions.forEach { pos ->
                 EdtGridCard(
                     event = pos.event,
+                    hasPendingTasks = pendingTaskSignatures.contains(pos.event.signature),
+                    onClick = if (onEventClick != null) { { onEventClick(pos.event) } } else null,
                     modifier = Modifier
                 )
             }

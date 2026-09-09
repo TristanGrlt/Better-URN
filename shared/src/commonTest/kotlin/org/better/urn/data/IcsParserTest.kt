@@ -57,6 +57,7 @@ class IcsParserTest {
             UID:test-event-2@better.urn
             SUMMARY:Informatique TP2
             LOCATION:Salle 102
+            DESCRIPTION:Prof: M. Dupont\nChit-Chat & TP Java
             DTSTART;TZID=Europe/Paris:20260908T140000
             DTEND;TZID=Europe/Paris:20260908T160000
             END:VEVENT
@@ -76,6 +77,7 @@ class IcsParserTest {
         assertEquals("tt_123", event1.timetableId)
         assertEquals("Mathématiques - CM (TD1)", event1.title)
         assertEquals("Amphi A - Batiment Sciences", event1.location)
+        assertEquals("", event1.description)
         assertTrue(event1.colorHex.startsWith("#"))
 
         // Check startMs conversion (2026-09-08 08:00:00 UTC)
@@ -98,6 +100,7 @@ class IcsParserTest {
         assertEquals("test-event-2@better.urn", event2.id)
         assertEquals("Informatique TP2", event2.title)
         assertEquals("Salle 102", event2.location)
+        assertEquals("Prof: M. Dupont\nChit-Chat & TP Java", event2.description)
 
         // Europe/Paris in September is UTC+2, so 14:00 Paris = 12:00 UTC
         val startInstant2 = Instant.fromEpochMilliseconds(event2.startMs)

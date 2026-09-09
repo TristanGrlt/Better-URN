@@ -22,10 +22,16 @@ import org.better.urn.data.allowBreakAnywhere
 import org.better.urn.data.formatEventHours
 import org.better.urn.data.parseHexColor
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+
 @Composable
 fun EdtGridCard(
     event: EdtEvent,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hasPendingTasks: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
     val rawColor = parseHexColor(event.colorHex)
     val backgroundColor = rawColor.copy(alpha = 0.2f)
@@ -33,49 +39,63 @@ fun EdtGridCard(
         formatEventHours(event.startMs, event.endMs)
     }
 
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.extraSmall,
-        color = backgroundColor,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize()
+    Box(modifier = modifier) {
+        Surface(
+            onClick = { onClick?.invoke() },
+            enabled = onClick != null,
+            modifier = Modifier.fillMaxSize(),
+            shape = MaterialTheme.shapes.extraSmall,
+            color = backgroundColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(rawColor)
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                verticalArrangement = Arrangement.Top
+            Row(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = event.title.allowBreakAnywhere(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(rawColor)
                 )
-                if (formattedHours.isNotBlank()) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalArrangement = Arrangement.Top
+                ) {
                     Text(
-                        text = formattedHours.allowBreakAnywhere(),
+                        text = event.title.allowBreakAnywhere(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold
                     )
-                }
-                if (event.location.isNotBlank()) {
-                    Text(
-                        text = event.location.allowBreakAnywhere(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (formattedHours.isNotBlank()) {
+                        Text(
+                            text = formattedHours.allowBreakAnywhere(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    if (event.location.isNotBlank()) {
+                        Text(
+                            text = event.location.allowBreakAnywhere(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
+        }
+
+        if (hasPendingTasks) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(2.dp)
+                    .size(6.dp)
+                    .background(MaterialTheme.colorScheme.error, CircleShape)
+            )
         }
     }
 }

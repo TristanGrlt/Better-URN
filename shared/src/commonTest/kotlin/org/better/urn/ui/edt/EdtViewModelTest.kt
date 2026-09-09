@@ -224,4 +224,58 @@ class EdtViewModelTest {
         assertTrue(state is EdtUiState.Success)
         assertEquals(listOf(eventEarlier, eventLater), state.events)
     }
+
+    @Test
+    fun testTaskManagement() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel = EdtViewModel(repository = fakeRepo)
+
+        val sig = "12345_1700000000000"
+        assertTrue(viewModel.tasks.value.isEmpty())
+
+        // Add task
+        viewModel.addTask(sig, "   Faire les exercices 1 à 3   ")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.tasks.value.size)
+        val task = viewModel.tasks.value.first()
+        assertEquals(sig, task.eventSignature)
+        assertEquals("Faire les exercices 1 à 3", task.description)
+        assertFalse(task.isDone)
+
+        // Toggle task state
+        viewModel.toggleTaskState(task.id)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertTrue(viewModel.tasks.value.first().isDone)
+
+        // Toggle back
+        viewModel.toggleTaskState(task.id)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.tasks.value.first().isDone)
+
+        // Delete task
+        viewModel.deleteTask(task.id)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertTrue(viewModel.tasks.value.isEmpty())
+    }
+
+    @Test
+    fun testTaskPersistenceWithCacheStorage() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel1 = EdtViewModel(repository = fakeRepo)
+
+        val sig = "9999_1700000000000"
+        viewModel1.addTask(sig, "Réviser le contrôle")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create new ViewModel instance to simulate app reload
+        val viewModel2 = EdtViewModel(repository = fakeRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel2.tasks.value.size)
+        val loadedTask = viewModel2.tasks.value.first()
+        assertEquals(sig, loadedTask.eventSignature)
+        assertEquals("Réviser le contrôle", loadedTask.description)
+        assertFalse(loadedTask.isDone)
+    }
 }
