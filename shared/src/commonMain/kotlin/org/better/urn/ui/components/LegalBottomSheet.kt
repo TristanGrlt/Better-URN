@@ -84,8 +84,9 @@ fun LegalBottomSheet(
                 content = "Better URN est conçue selon le principe du respect de la vie privée dès la conception (Privacy by Design). L'application opère comme une passerelle de communication directe entre votre appareil et le serveur de votre établissement.",
                 bulletPoints = listOf(
                     "Absence de serveurs tiers" to "Vos identifiants, résultats, emplois du temps et fichiers de cours sont stockés exclusivement sur la mémoire locale de votre appareil.",
+                    "Calendriers & Emplois du temps" to "Les URL d'emplois du temps au format ICS (ex. Celcat, ADE), la liste des cours masqués et vos préférences d'affichage (onglet au démarrage, vue par défaut, jours affichés) sont enregistrés uniquement sur votre appareil. La synchronisation interroge directement les serveurs d'origine sans aucun intermédiaire.",
                     "Sécurité des accès" to "Le jeton de connexion (token) assurant l'authentification est chiffré et sauvegardé de manière sécurisée en s'appuyant sur les mécanismes de protection natifs de votre système d'exploitation.",
-                    "Gestion du cache" to "L'application conserve temporairement certaines données (miniatures, arborescence des cours, documents) pour garantir un fonctionnement hors ligne et accélérer la navigation globale. Ce cache local peut être purgé à tout moment depuis les paramètres de l'application."
+                    "Gestion du cache & préférences" to "L'application conserve temporairement certaines données (miniatures, arborescence des cours, documents) et vos choix de configuration pour garantir un fonctionnement hors ligne et accélérer la navigation. Ce cache local peut être purgé à tout moment depuis les paramètres de l'application."
                 )
             )
 
