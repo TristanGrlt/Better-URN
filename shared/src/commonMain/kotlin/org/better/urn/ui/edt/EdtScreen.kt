@@ -40,7 +40,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -84,7 +83,6 @@ fun EdtScreen(
     val timetables by viewModel.timetables.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showManagerSheet by remember { mutableStateOf(false) }
     var showUpcomingTasksSheet by remember { mutableStateOf(false) }
@@ -94,26 +92,32 @@ fun EdtScreen(
         tasks.filter { !it.isDone }.map { it.eventSignature }.toSet()
     }
 
-    val tabs = listOf("Agenda", "Semaine")
+    val tabs = remember { listOf("Agenda", "Semaine") }
+    val mainPagerState = rememberPagerState(initialPage = 0) { tabs.size }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     SecondaryTabRow(
-                        selectedTabIndex = selectedTabIndex,
+                        selectedTabIndex = mainPagerState.currentPage,
                         modifier = Modifier.widthIn(max = 280.dp),
                         divider = {}
                     ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
+                                selected = mainPagerState.currentPage == index,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        mainPagerState.animateScrollToPage(index)
+                                    }
+                                },
                                 text = {
                                     Text(
                                         text = title,
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium
+                                        fontWeight = if (mainPagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
                                     )
                                 }
                             )
@@ -153,8 +157,15 @@ fun EdtScreen(
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
         ) {
-            when (selectedTabIndex) {
-                0 -> { // Agenda View
+            HorizontalPager(
+                state = mainPagerState,
+                // Only allow swiping from Agenda (page 0) to Semaine (page 1).
+                // Disabling swipe on Semaine ensures horizontal swipes on Semaine navigate weeks.
+                userScrollEnabled = EdtPagerPolicy.isOuterSwipeEnabled(mainPagerState.currentPage),
+                modifier = Modifier.fillMaxSize()
+            ) { mainPage ->
+                when (mainPage) {
+                    0 -> { // Agenda View
                     when (val state = uiState) {
                         is EdtUiState.Loading -> {
                             M3CoursesLoadingView(
@@ -423,6 +434,7 @@ fun EdtScreen(
                     }
                 }
             }
+        }
 
             FloatingActionButton(
                 onClick = { showAddDialog = true },
