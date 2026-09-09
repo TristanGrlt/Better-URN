@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,6 +35,10 @@ import org.better.urn.ui.components.M3DownloadNotificationBanner
 import org.better.urn.ui.components.PdfViewerOverlay
 import org.better.urn.ui.components.VideoPlayerOverlay
 import org.better.urn.ui.edt.EdtScreen
+import org.better.urn.ui.edt.EdtUiState
+import org.better.urn.ui.edt.EdtViewModel
+import org.better.urn.ui.edt.components.AddTimetableDialog
+import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
 import org.better.urn.ui.settings.SettingsScreen
@@ -289,8 +294,51 @@ fun App(
                             onToggleLegalDialog = settingsViewModel::onToggleLegalDialog,
                             onToggleLicenseDialog = settingsViewModel::onToggleLicenseDialog,
                             onToggleServerDialog = settingsViewModel::onToggleServerDialog,
+                            onToggleEdtManager = settingsViewModel::onToggleEdtManager,
                             onBackClick = { isSettingsOpen = false },
                             onProfileClick = null
+                        )
+                    }
+                }
+
+                if (settingsState.isEdtManagerOpen) {
+                    val edtViewModel: EdtViewModel = viewModel { EdtViewModel() }
+                    val edtUiState by edtViewModel.uiState.collectAsState()
+                    val timetables by edtViewModel.timetables.collectAsState()
+                    val allRawEvents by edtViewModel.allRawEvents.collectAsState()
+                    val hiddenCourseTitles by edtViewModel.hiddenCourseTitles.collectAsState()
+                    val hiddenEventIds by edtViewModel.hiddenEventIds.collectAsState()
+                    val successState = edtUiState as? EdtUiState.Success
+
+                    var showAddDialogInSettings by remember { mutableStateOf(false) }
+
+                    EdtManagementSheet(
+                        timetables = timetables,
+                        allEvents = allRawEvents,
+                        hiddenCourseTitles = hiddenCourseTitles,
+                        hiddenEventIds = hiddenEventIds,
+                        isRefreshing = successState?.isRefreshing ?: false,
+                        lastSyncTimestamp = successState?.lastSyncTimestamp,
+                        refreshError = successState?.refreshError,
+                        onToggleVisibility = { id -> edtViewModel.toggleVisibility(id) },
+                        onDeleteTimetable = { id -> edtViewModel.deleteTimetable(id) },
+                        onAddTimetableClick = { showAddDialogInSettings = true },
+                        onForceRefresh = { edtViewModel.loadEvents() },
+                        onToggleCourseTitleVisibility = { title -> edtViewModel.toggleCourseTitleVisibility(title) },
+                        onUnhideCourseTitle = { title -> edtViewModel.unhideCourseTitle(title) },
+                        onUnhideEvent = { eventId -> edtViewModel.unhideEvent(eventId) },
+                        onUnhideAllCoursesForTimetable = { timetableId -> edtViewModel.unhideAllCoursesForTimetable(timetableId) },
+                        onUnhideAllHidden = { edtViewModel.unhideAllHidden() },
+                        onDismiss = { settingsViewModel.onToggleEdtManager(false) }
+                    )
+
+                    if (showAddDialogInSettings) {
+                        AddTimetableDialog(
+                            onDismiss = { showAddDialogInSettings = false },
+                            onConfirm = { name, url ->
+                                edtViewModel.addTimetable(name, url)
+                                showAddDialogInSettings = false
+                            }
                         )
                     }
                 }

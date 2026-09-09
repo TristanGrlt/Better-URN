@@ -225,6 +225,25 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun testOnToggleEdtManagerTogglesAndExplicitlySetsState() {
+        val viewModel = SettingsViewModel(preferences)
+
+        assertFalse(viewModel.uiState.value.isEdtManagerOpen)
+
+        viewModel.onToggleEdtManager()
+        assertTrue(viewModel.uiState.value.isEdtManagerOpen)
+
+        viewModel.onToggleEdtManager()
+        assertFalse(viewModel.uiState.value.isEdtManagerOpen)
+
+        viewModel.onToggleEdtManager(true)
+        assertTrue(viewModel.uiState.value.isEdtManagerOpen)
+
+        viewModel.onToggleEdtManager(false)
+        assertFalse(viewModel.uiState.value.isEdtManagerOpen)
+    }
+
+    @Test
     fun testRefreshStateResyncsWithPreferences() {
         val viewModel = SettingsViewModel(preferences)
 

@@ -82,6 +82,11 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(isServerDialogOpen = nextState)
     }
 
+    fun onToggleEdtManager(isOpen: Boolean? = null) {
+        val nextState = isOpen ?: !_uiState.value.isEdtManagerOpen
+        _uiState.value = _uiState.value.copy(isEdtManagerOpen = nextState)
+    }
+
     fun refreshState() {
         _uiState.value = _uiState.value.copy(
             currentUser = preferences.cachedUser,

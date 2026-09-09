@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Tab
+import androidx.compose.material.icons.rounded.Tune
 import org.better.urn.BuildKonfig
 import org.better.urn.data.AppTheme
 import org.better.urn.data.EdtViewMode
@@ -81,6 +82,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onToggleLicenseDialog: ((Boolean?) -> Unit)? = null,
     onToggleServerDialog: ((Boolean?) -> Unit)? = null,
+    onToggleEdtManager: ((Boolean?) -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
     onProfileClick: (() -> Unit)? = null
 ) {
@@ -472,6 +474,45 @@ fun SettingsScreen(
                                     }
                                 }
                             }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        text = "Centre de gestion EDT",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                supportingContent = {
+                                    Text(
+                                        text = "Gérer vos emplois du temps et masquer des cours",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                leadingContent = {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Tune,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { onToggleEdtManager?.invoke(true) }
+                            )
                         }
                     }
                 }

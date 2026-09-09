@@ -20,5 +20,6 @@ data class SettingsUiState(
     val edtWeekDays: EdtWeekDays = EdtWeekDays.SEVEN,
     val isLegalDialogOpen: Boolean = false,
     val isLicenseDialogOpen: Boolean = false,
-    val isServerDialogOpen: Boolean = false
+    val isServerDialogOpen: Boolean = false,
+    val isEdtManagerOpen: Boolean = false
 )
