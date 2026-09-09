@@ -3,6 +3,7 @@ package org.better.urn.data
 import com.russhwolf.settings.Settings
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.better.urn.ui.navigation.AppScreen
 
 class UserPreferences {
     private val settings: Settings by lazy {
@@ -39,6 +40,52 @@ class UserPreferences {
             } catch (_: Exception) {}
             try {
                 settings.putString("app_theme", value.name)
+            } catch (_: Exception) {}
+        }
+
+    var defaultTab: AppScreen
+        get() {
+            val fileTab = CacheStorage.getString("default_tab")
+            val tabName = fileTab ?: try {
+                settings.getStringOrNull("default_tab")
+            } catch (_: Exception) {
+                null
+            }
+            return try {
+                if (tabName != null) AppScreen.valueOf(tabName) else AppScreen.UNIVERSITICE
+            } catch (_: Exception) {
+                AppScreen.UNIVERSITICE
+            }
+        }
+        set(value) {
+            try {
+                CacheStorage.saveString("default_tab", value.name)
+            } catch (_: Exception) {}
+            try {
+                settings.putString("default_tab", value.name)
+            } catch (_: Exception) {}
+        }
+
+    var edtDefaultView: EdtViewMode
+        get() {
+            val fileMode = CacheStorage.getString("edt_default_view")
+            val modeName = fileMode ?: try {
+                settings.getStringOrNull("edt_default_view")
+            } catch (_: Exception) {
+                null
+            }
+            return try {
+                if (modeName != null) EdtViewMode.valueOf(modeName) else EdtViewMode.AGENDA
+            } catch (_: Exception) {
+                EdtViewMode.AGENDA
+            }
+        }
+        set(value) {
+            try {
+                CacheStorage.saveString("edt_default_view", value.name)
+            } catch (_: Exception) {}
+            try {
+                settings.putString("edt_default_view", value.name)
             } catch (_: Exception) {}
         }
 
@@ -123,6 +170,8 @@ class UserPreferences {
     fun logout() {
         val currentTheme = appTheme
         val currentUrl = moodleUrl
+        val currentDefaultTab = defaultTab
+        val currentEdtDefaultView = edtDefaultView
         moodleToken = ""
         moodlePassport = null
         SecureStorage.removeSecureString("moodle_token")
@@ -131,6 +180,8 @@ class UserPreferences {
         cachedCourses = emptyList()
         appTheme = currentTheme
         moodleUrl = currentUrl
+        defaultTab = currentDefaultTab
+        edtDefaultView = currentEdtDefaultView
     }
 
     fun getCachedCourseSections(courseId: Int): List<CourseSection> {

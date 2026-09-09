@@ -1,5 +1,6 @@
 package org.better.urn.data
 
+import org.better.urn.ui.navigation.AppScreen
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -16,6 +17,8 @@ class UserPreferencesTest {
     fun cleanup() {
         preferences.logout()
         preferences.appTheme = AppTheme.SYSTEM
+        preferences.defaultTab = AppScreen.UNIVERSITICE
+        preferences.edtDefaultView = EdtViewMode.AGENDA
     }
 
     @Test
@@ -31,6 +34,36 @@ class UserPreferencesTest {
         preferences.appTheme = AppTheme.LIGHT
         assertEquals(AppTheme.LIGHT, preferences.appTheme)
         assertEquals(AppTheme.LIGHT, newPrefs.appTheme)
+    }
+
+    @Test
+    fun testDefaultTabPersistence() {
+        assertEquals(AppScreen.UNIVERSITICE, preferences.defaultTab)
+
+        preferences.defaultTab = AppScreen.EDT
+        assertEquals(AppScreen.EDT, preferences.defaultTab)
+
+        val newPrefs = UserPreferences()
+        assertEquals(AppScreen.EDT, newPrefs.defaultTab)
+
+        preferences.defaultTab = AppScreen.IZLY
+        assertEquals(AppScreen.IZLY, preferences.defaultTab)
+        assertEquals(AppScreen.IZLY, newPrefs.defaultTab)
+    }
+
+    @Test
+    fun testEdtDefaultViewPersistence() {
+        assertEquals(EdtViewMode.AGENDA, preferences.edtDefaultView)
+
+        preferences.edtDefaultView = EdtViewMode.SEMAINE
+        assertEquals(EdtViewMode.SEMAINE, preferences.edtDefaultView)
+
+        val newPrefs = UserPreferences()
+        assertEquals(EdtViewMode.SEMAINE, newPrefs.edtDefaultView)
+
+        preferences.edtDefaultView = EdtViewMode.AGENDA
+        assertEquals(EdtViewMode.AGENDA, preferences.edtDefaultView)
+        assertEquals(EdtViewMode.AGENDA, newPrefs.edtDefaultView)
     }
 
     @Test
@@ -75,13 +108,17 @@ class UserPreferencesTest {
     }
 
     @Test
-    fun testLogoutPreservesAppTheme() {
+    fun testLogoutPreservesAppThemeAndDefaultTabAndEdtDefaultView() {
         preferences.appTheme = AppTheme.DARK
+        preferences.defaultTab = AppScreen.EDT
+        preferences.edtDefaultView = EdtViewMode.SEMAINE
         preferences.moodleToken = "token_to_clear"
 
         preferences.logout()
 
         assertEquals("", preferences.moodleToken)
         assertEquals(AppTheme.DARK, preferences.appTheme)
+        assertEquals(AppScreen.EDT, preferences.defaultTab)
+        assertEquals(EdtViewMode.SEMAINE, preferences.edtDefaultView)
     }
 }

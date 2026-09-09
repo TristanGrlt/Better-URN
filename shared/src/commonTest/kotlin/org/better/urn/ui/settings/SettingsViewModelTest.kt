@@ -2,8 +2,10 @@ package org.better.urn.ui.settings
 
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
+import org.better.urn.data.EdtViewMode
 import org.better.urn.data.MoodleUser
 import org.better.urn.data.UserPreferences
+import org.better.urn.ui.navigation.AppScreen
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,6 +23,8 @@ class SettingsViewModelTest {
     fun cleanup() {
         preferences.logout()
         preferences.appTheme = AppTheme.SYSTEM
+        preferences.defaultTab = AppScreen.UNIVERSITICE
+        preferences.edtDefaultView = EdtViewMode.AGENDA
         preferences.moodleUrl = "https://universitice.univ-rouen.fr"
         CacheStorage.clear()
     }
@@ -31,6 +35,8 @@ class SettingsViewModelTest {
         preferences.cachedUser = user
         preferences.moodleUrl = "https://custom.moodle.org"
         preferences.appTheme = AppTheme.DARK
+        preferences.defaultTab = AppScreen.EDT
+        preferences.edtDefaultView = EdtViewMode.SEMAINE
 
         val viewModel = SettingsViewModel(preferences)
         val state = viewModel.uiState.value
@@ -38,6 +44,8 @@ class SettingsViewModelTest {
         assertEquals(user, state.currentUser)
         assertEquals("https://custom.moodle.org", state.moodleUrl)
         assertEquals(AppTheme.DARK, state.theme)
+        assertEquals(AppScreen.EDT, state.defaultTab)
+        assertEquals(EdtViewMode.SEMAINE, state.edtDefaultView)
         assertFalse(state.isLegalDialogOpen)
         assertFalse(state.isServerDialogOpen)
     }
@@ -57,6 +65,40 @@ class SettingsViewModelTest {
         viewModel.onThemeChanged(AppTheme.SYSTEM)
         assertEquals(AppTheme.SYSTEM, viewModel.uiState.value.theme)
         assertEquals(AppTheme.SYSTEM, preferences.appTheme)
+    }
+
+    @Test
+    fun testOnDefaultTabChangedUpdatesStateAndPreferences() {
+        val viewModel = SettingsViewModel(preferences)
+
+        viewModel.onDefaultTabChanged(AppScreen.EDT)
+        assertEquals(AppScreen.EDT, viewModel.uiState.value.defaultTab)
+        assertEquals(AppScreen.EDT, preferences.defaultTab)
+
+        viewModel.onDefaultTabChanged(AppScreen.IZLY)
+        assertEquals(AppScreen.IZLY, viewModel.uiState.value.defaultTab)
+        assertEquals(AppScreen.IZLY, preferences.defaultTab)
+
+        viewModel.onDefaultTabChanged(AppScreen.AUTRE)
+        assertEquals(AppScreen.AUTRE, viewModel.uiState.value.defaultTab)
+        assertEquals(AppScreen.AUTRE, preferences.defaultTab)
+
+        viewModel.onDefaultTabChanged(AppScreen.UNIVERSITICE)
+        assertEquals(AppScreen.UNIVERSITICE, viewModel.uiState.value.defaultTab)
+        assertEquals(AppScreen.UNIVERSITICE, preferences.defaultTab)
+    }
+
+    @Test
+    fun testOnEdtDefaultViewChangedUpdatesStateAndPreferences() {
+        val viewModel = SettingsViewModel(preferences)
+
+        viewModel.onEdtDefaultViewChanged(EdtViewMode.SEMAINE)
+        assertEquals(EdtViewMode.SEMAINE, viewModel.uiState.value.edtDefaultView)
+        assertEquals(EdtViewMode.SEMAINE, preferences.edtDefaultView)
+
+        viewModel.onEdtDefaultViewChanged(EdtViewMode.AGENDA)
+        assertEquals(EdtViewMode.AGENDA, viewModel.uiState.value.edtDefaultView)
+        assertEquals(EdtViewMode.AGENDA, preferences.edtDefaultView)
     }
 
     @Test
@@ -166,6 +208,8 @@ class SettingsViewModelTest {
         val viewModel = SettingsViewModel(preferences)
 
         preferences.appTheme = AppTheme.DARK
+        preferences.defaultTab = AppScreen.EDT
+        preferences.edtDefaultView = EdtViewMode.SEMAINE
         preferences.moodleUrl = "https://updated.moodle.com"
         val user = MoodleUser(userid = 400, fullname = "David Guetta", userpictureurl = "")
         preferences.cachedUser = user
@@ -174,6 +218,8 @@ class SettingsViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(AppTheme.DARK, state.theme)
+        assertEquals(AppScreen.EDT, state.defaultTab)
+        assertEquals(EdtViewMode.SEMAINE, state.edtDefaultView)
         assertEquals("https://updated.moodle.com", state.moodleUrl)
         assertEquals(user, state.currentUser)
     }

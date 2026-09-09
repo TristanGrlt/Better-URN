@@ -52,11 +52,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Tab
 import org.better.urn.BuildKonfig
 import org.better.urn.data.AppTheme
+import org.better.urn.data.EdtViewMode
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.LegalBottomSheet
 import org.better.urn.ui.components.LicenseBottomSheet
+import org.better.urn.ui.navigation.AppScreen
 
 /**
  * Settings screen Composable complying strictly with Material 3 Expressive guidelines.
@@ -66,6 +70,8 @@ import org.better.urn.ui.components.LicenseBottomSheet
 fun SettingsScreen(
     state: SettingsUiState,
     onThemeChanged: (AppTheme) -> Unit,
+    onDefaultTabChanged: (AppScreen) -> Unit = {},
+    onEdtDefaultViewChanged: (EdtViewMode) -> Unit = {},
     onServerUrlChanged: (String) -> Unit,
     onClearCacheClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
@@ -286,6 +292,125 @@ fun SettingsScreen(
                                     ) {
                                         Text(
                                             text = label,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Section: Navigation
+                item {
+                    SettingsCardGroup(title = "Navigation") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Tab,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Onglet au démarrage",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Choisissez l'onglet affiché à l'ouverture de l'application",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                AppScreen.entries.forEachIndexed { index, screen ->
+                                    SegmentedButton(
+                                        selected = state.defaultTab == screen,
+                                        onClick = { onDefaultTabChanged(screen) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = AppScreen.entries.size
+                                        )
+                                    ) {
+                                        Text(
+                                            text = screen.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DateRange,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Vue EDT par défaut",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Choisissez la vue affichée par défaut dans l'emploi du temps",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                EdtViewMode.entries.forEachIndexed { index, mode ->
+                                    SegmentedButton(
+                                        selected = state.edtDefaultView == mode,
+                                        onClick = { onEdtDefaultViewChanged(mode) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = EdtViewMode.entries.size
+                                        )
+                                    ) {
+                                        Text(
+                                            text = mode.label,
                                             style = MaterialTheme.typography.labelMedium
                                         )
                                     }

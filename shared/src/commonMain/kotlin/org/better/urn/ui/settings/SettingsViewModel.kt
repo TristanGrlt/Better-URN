@@ -6,7 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
+import org.better.urn.data.EdtViewMode
 import org.better.urn.data.UserPreferences
+import org.better.urn.ui.navigation.AppScreen
 
 /**
  * ViewModel managing presentation logic and user intent processing for the Settings screen.
@@ -20,6 +22,8 @@ class SettingsViewModel(
             currentUser = preferences.cachedUser,
             moodleUrl = preferences.moodleUrl,
             theme = preferences.appTheme,
+            defaultTab = preferences.defaultTab,
+            edtDefaultView = preferences.edtDefaultView,
             isLegalDialogOpen = false,
             isServerDialogOpen = false
         )
@@ -29,6 +33,16 @@ class SettingsViewModel(
     fun onThemeChanged(theme: AppTheme) {
         preferences.appTheme = theme
         _uiState.value = _uiState.value.copy(theme = theme)
+    }
+
+    fun onDefaultTabChanged(tab: AppScreen) {
+        preferences.defaultTab = tab
+        _uiState.value = _uiState.value.copy(defaultTab = tab)
+    }
+
+    fun onEdtDefaultViewChanged(mode: EdtViewMode) {
+        preferences.edtDefaultView = mode
+        _uiState.value = _uiState.value.copy(edtDefaultView = mode)
     }
 
     fun onServerUrlChanged(url: String) {
@@ -65,7 +79,9 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(
             currentUser = preferences.cachedUser,
             moodleUrl = preferences.moodleUrl,
-            theme = preferences.appTheme
+            theme = preferences.appTheme,
+            defaultTab = preferences.defaultTab,
+            edtDefaultView = preferences.edtDefaultView
         )
     }
 }

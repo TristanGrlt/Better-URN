@@ -153,7 +153,7 @@ fun App(
                     }
                 )
             ) {
-                mutableStateListOf(AppScreen.UNIVERSITICE)
+                mutableStateListOf(settingsState.defaultTab)
             }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
 
@@ -248,7 +248,8 @@ fun App(
                         }
                         AppScreen.EDT -> {
                             EdtScreen(
-                                onProfileClick = onNavigateToSettings
+                                onProfileClick = onNavigateToSettings,
+                                initialViewMode = settingsState.edtDefaultView
                             )
                         }
                         AppScreen.AUTRE -> {
@@ -271,6 +272,8 @@ fun App(
                         SettingsScreen(
                             state = settingsState,
                             onThemeChanged = settingsViewModel::onThemeChanged,
+                            onDefaultTabChanged = settingsViewModel::onDefaultTabChanged,
+                            onEdtDefaultViewChanged = settingsViewModel::onEdtDefaultViewChanged,
                             onServerUrlChanged = settingsViewModel::onServerUrlChanged,
                             onClearCacheClicked = {
                                 settingsViewModel.onClearCacheClicked()
