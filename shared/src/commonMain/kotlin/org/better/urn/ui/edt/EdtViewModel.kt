@@ -34,9 +34,32 @@ class EdtViewModel(
     private val _tasks = MutableStateFlow<List<EdtTask>>(emptyList())
     val tasks: StateFlow<List<EdtTask>> = _tasks.asStateFlow()
 
+    private val _manualEvents = MutableStateFlow<List<EdtEvent>>(emptyList())
+    val manualEvents: StateFlow<List<EdtEvent>> = _manualEvents.asStateFlow()
+
     init {
+        loadSavedManualEvents()
         loadSavedTimetables()
         loadSavedTasks()
+    }
+
+    private fun loadSavedManualEvents() {
+        val jsonString = CacheStorage.getString(KEY_MANUAL_EVENTS)
+        if (!jsonString.isNullOrBlank()) {
+            try {
+                val savedManualEvents = json.decodeFromString<List<EdtEvent>>(jsonString)
+                _manualEvents.value = savedManualEvents
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun saveManualEvents(events: List<EdtEvent>) {
+        try {
+            val jsonString = json.encodeToString(events)
+            CacheStorage.saveString(KEY_MANUAL_EVENTS, jsonString)
+        } catch (_: Exception) {
+        }
     }
 
     private fun loadSavedTimetables() {
@@ -106,6 +129,48 @@ class EdtViewModel(
         }
     }
 
+    fun addManualEvent(
+        title: String,
+        startMs: Long,
+        endMs: Long,
+        location: String,
+        colorHex: String,
+        description: String = ""
+    ) {
+        val nowMs = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        val newEvent = EdtEvent(
+            id = "manual_${nowMs}_${(100000..999999).random()}",
+            timetableId = "manual",
+            title = title.trim(),
+            startMs = startMs,
+            endMs = endMs,
+            location = location.trim(),
+            colorHex = colorHex,
+            description = description.trim(),
+            isManual = true
+        )
+        val updated = _manualEvents.value + newEvent
+        _manualEvents.value = updated
+        saveManualEvents(updated)
+        loadEvents()
+    }
+
+    fun updateManualEvent(event: EdtEvent) {
+        val updated = _manualEvents.value.map {
+            if (it.id == event.id) event else it
+        }
+        _manualEvents.value = updated
+        saveManualEvents(updated)
+        loadEvents()
+    }
+
+    fun deleteManualEvent(eventId: String) {
+        val updated = _manualEvents.value.filterNot { it.id == eventId }
+        _manualEvents.value = updated
+        saveManualEvents(updated)
+        loadEvents()
+    }
+
     fun addTask(eventSignature: String, description: String) {
         if (description.isBlank()) return
         val newTask = EdtTask(
@@ -172,10 +237,11 @@ class EdtViewModel(
         viewModelScope.launch {
             val visibleTimetables = _timetables.value.filter { it.isVisible }
             val lastSync = loadLastSyncTimestamp()
+            val manualList = _manualEvents.value
 
             if (visibleTimetables.isEmpty()) {
                 _uiState.value = EdtUiState.Success(
-                    events = emptyList(),
+                    events = manualList.sortedBy { it.startMs },
                     isRefreshing = false,
                     lastSyncTimestamp = lastSync
                 )
@@ -185,10 +251,11 @@ class EdtViewModel(
             val cached = loadCachedEvents()
             val visibleIds = visibleTimetables.map { it.id }.toSet()
             val filteredCached = cached.filter { it.timetableId in visibleIds || it.timetableId == "default" || visibleIds.isEmpty() }
+            val combinedCached = (filteredCached + manualList).distinctBy { it.id }.sortedBy { it.startMs }
 
-            if (filteredCached.isNotEmpty()) {
+            if (combinedCached.isNotEmpty()) {
                 _uiState.value = EdtUiState.Success(
-                    events = filteredCached,
+                    events = combinedCached,
                     isRefreshing = true,
                     lastSyncTimestamp = lastSync,
                     refreshError = null
@@ -198,13 +265,15 @@ class EdtViewModel(
             }
 
             try {
-                val allEvents = visibleTimetables.flatMap { timetable ->
+                val remoteEvents = visibleTimetables.flatMap { timetable ->
                     repository.fetchAndParseIcs(timetable.url, isDarkTheme, timetable.id)
-                }.sortedBy { it.startMs }
+                }
 
                 val nowMs = kotlin.time.Clock.System.now().toEpochMilliseconds()
-                saveCachedEvents(allEvents)
+                saveCachedEvents(remoteEvents)
                 saveLastSyncTimestamp(nowMs)
+
+                val allEvents = (remoteEvents + manualList).distinctBy { it.id }.sortedBy { it.startMs }
 
                 _uiState.value = EdtUiState.Success(
                     events = allEvents,
@@ -214,9 +283,9 @@ class EdtViewModel(
                 )
             } catch (e: Exception) {
                 val errorMsg = e.message ?: "Erreur inconnue"
-                if (filteredCached.isNotEmpty()) {
+                if (combinedCached.isNotEmpty()) {
                     _uiState.value = EdtUiState.Success(
-                        events = filteredCached,
+                        events = combinedCached,
                         isRefreshing = false,
                         lastSyncTimestamp = lastSync,
                         refreshError = errorMsg
@@ -233,5 +302,6 @@ class EdtViewModel(
         private const val KEY_TASKS = "edt_tasks"
         private const val KEY_EVENTS = "edt_cached_events"
         private const val KEY_LAST_SYNC = "edt_last_sync_timestamp"
+        private const val KEY_MANUAL_EVENTS = "edt_manual_events"
     }
 }

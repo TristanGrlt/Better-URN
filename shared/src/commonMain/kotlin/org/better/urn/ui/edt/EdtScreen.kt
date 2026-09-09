@@ -72,7 +72,14 @@ import org.better.urn.ui.edt.components.EdtDayHeader
 import org.better.urn.ui.edt.components.EdtEventCard
 import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
+import org.better.urn.ui.edt.components.ManualCourseDialog
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.rememberModalBottomSheetState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -85,6 +92,9 @@ fun EdtScreen(
     val tasks by viewModel.tasks.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showAddCourseDialog by remember { mutableStateOf(false) }
+    var showAddChoiceSheet by remember { mutableStateOf(false) }
+    var eventToEdit by remember { mutableStateOf<EdtEvent?>(null) }
     var showManagerSheet by remember { mutableStateOf(false) }
     var showUpcomingTasksSheet by remember { mutableStateOf(false) }
     var selectedEventForDetail by remember { mutableStateOf<EdtEvent?>(null) }
@@ -438,16 +448,156 @@ fun EdtScreen(
             }
 
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = { showAddChoiceSheet = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
-                    contentDescription = "Ajouter un calendrier"
+                    contentDescription = "Ajouter un cours ou un calendrier"
                 )
             }
+        }
+
+        if (showAddChoiceSheet) {
+            val choiceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { showAddChoiceSheet = false },
+                sheetState = choiceSheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Que souhaitez-vous ajouter ?",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    OutlinedCard(
+                        onClick = {
+                            showAddChoiceSheet = false
+                            showAddCourseDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Event,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Ajouter un cours",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Créer manuellement un cours ponctuel",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedCard(
+                        onClick = {
+                            showAddChoiceSheet = false
+                            showAddDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Ajouter un calendrier",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Importer votre emploi du temps via une URL (ex: ADE)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showAddCourseDialog) {
+            ManualCourseDialog(
+                onDismiss = { showAddCourseDialog = false },
+                onConfirm = { title, startMs, endMs, location, colorHex, description ->
+                    viewModel.addManualEvent(
+                        title = title,
+                        startMs = startMs,
+                        endMs = endMs,
+                        location = location,
+                        colorHex = colorHex,
+                        description = description
+                    )
+                    showAddCourseDialog = false
+                }
+            )
+        }
+
+        eventToEdit?.let { event ->
+            ManualCourseDialog(
+                initialEvent = event,
+                onDismiss = { eventToEdit = null },
+                onConfirm = { title, startMs, endMs, location, colorHex, description ->
+                    viewModel.updateManualEvent(
+                        event.copy(
+                            title = title,
+                            startMs = startMs,
+                            endMs = endMs,
+                            location = location,
+                            colorHex = colorHex,
+                            description = description
+                        )
+                    )
+                    eventToEdit = null
+                },
+                onDelete = { eventId ->
+                    viewModel.deleteManualEvent(eventId)
+                    eventToEdit = null
+                }
+            )
         }
 
         if (showAddDialog) {
@@ -482,6 +632,8 @@ fun EdtScreen(
                 onAddTask = { description -> viewModel.addTask(event.signature, description) },
                 onToggleTask = { taskId -> viewModel.toggleTaskState(taskId) },
                 onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
+                onEditManualEvent = { eventToEdit = it },
+                onDeleteManualEvent = { eventId -> viewModel.deleteManualEvent(eventId) },
                 onDismiss = { selectedEventForDetail = null }
             )
         }

@@ -344,4 +344,144 @@ class EdtViewModelTest {
         val formattedPast = formatLastSyncTime(1700000000000L)
         assertTrue(formattedPast.contains("à"))
     }
+
+    @Test
+    fun testAddManualEvent() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel = EdtViewModel(repository = fakeRepo)
+
+        assertTrue(viewModel.manualEvents.value.isEmpty())
+
+        viewModel.addManualEvent(
+            title = "  Projet Mobile  ",
+            startMs = 1700000000000L,
+            endMs = 1700003600000L,
+            location = "Salle 202",
+            colorHex = "#1E88E5",
+            description = "Examen final"
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.manualEvents.value.size)
+        val added = viewModel.manualEvents.value.first()
+        assertEquals("Projet Mobile", added.title)
+        assertEquals(1700000000000L, added.startMs)
+        assertEquals(1700003600000L, added.endMs)
+        assertEquals("Salle 202", added.location)
+        assertEquals("#1E88E5", added.colorHex)
+        assertEquals("Examen final", added.description)
+        assertTrue(added.isManual)
+
+        val state = viewModel.uiState.value
+        assertTrue(state is EdtUiState.Success)
+        assertEquals(1, state.events.size)
+        assertEquals("Projet Mobile", state.events.first().title)
+    }
+
+    @Test
+    fun testUpdateManualEvent() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel = EdtViewModel(repository = fakeRepo)
+
+        viewModel.addManualEvent(
+            title = "Maths",
+            startMs = 1700000000000L,
+            endMs = 1700003600000L,
+            location = "Amphi A",
+            colorHex = "#FF0000"
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val created = viewModel.manualEvents.value.first()
+        val updatedEvent = created.copy(
+            title = "Maths Appliquées",
+            location = "Amphi B"
+        )
+
+        viewModel.updateManualEvent(updatedEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.manualEvents.value.size)
+        val current = viewModel.manualEvents.value.first()
+        assertEquals("Maths Appliquées", current.title)
+        assertEquals("Amphi B", current.location)
+
+        val state = viewModel.uiState.value
+        assertTrue(state is EdtUiState.Success)
+        assertEquals("Maths Appliquées", state.events.first().title)
+    }
+
+    @Test
+    fun testDeleteManualEvent() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel = EdtViewModel(repository = fakeRepo)
+
+        viewModel.addManualEvent("Chimie", 1700000000000L, 1700003600000L, "Lab 1", "#00FF00")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val created = viewModel.manualEvents.value.first()
+        viewModel.deleteManualEvent(created.id)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.manualEvents.value.isEmpty())
+        val state = viewModel.uiState.value
+        assertTrue(state is EdtUiState.Success)
+        assertTrue(state.events.isEmpty())
+    }
+
+    @Test
+    fun testMergeManualEventsWithRemoteTimetableEvents() = runTest {
+        val remoteEvent = EdtEvent(
+            id = "remote_1",
+            timetableId = "tt_1",
+            title = "Cours Réseau",
+            startMs = 1700000000000L,
+            endMs = 1700003600000L,
+            location = "Amphi C",
+            colorHex = "#8E24AA",
+            isManual = false
+        )
+
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(remoteEvent)
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addManualEvent(
+            title = "Atelier Perso",
+            startMs = 1700005000000L,
+            endMs = 1700008000000L,
+            location = "FabLab",
+            colorHex = "#FB8C00"
+        )
+        viewModel.addTimetable("EDT Univ", "https://example.com/cal.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is EdtUiState.Success)
+        assertEquals(2, state.events.size)
+        assertEquals("Cours Réseau", state.events[0].title)
+        assertEquals("Atelier Perso", state.events[1].title)
+    }
+
+    @Test
+    fun testManualEventsPersistence() = runTest {
+        val fakeRepo = object : EdtRepository() {}
+        val viewModel1 = EdtViewModel(repository = fakeRepo)
+
+        viewModel1.addManualEvent("Algorithmique", 1700000000000L, 1700003600000L, "S01", "#1E88E5")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val viewModel2 = EdtViewModel(repository = fakeRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel2.manualEvents.value.size)
+        assertEquals("Algorithmique", viewModel2.manualEvents.value.first().title)
+        val state = viewModel2.uiState.value
+        assertTrue(state is EdtUiState.Success)
+        assertEquals(1, state.events.size)
+        assertEquals("Algorithmique", state.events.first().title)
+    }
 }
