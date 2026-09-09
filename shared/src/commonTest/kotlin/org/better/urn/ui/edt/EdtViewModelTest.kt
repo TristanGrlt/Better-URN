@@ -646,4 +646,38 @@ class EdtViewModelTest {
         val state = viewModel2.uiState.value as EdtUiState.Success
         assertEquals(0, state.events.size)
     }
+
+    @Test
+    fun testUnhideAllCoursesForTimetable() = runTest {
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return if (url.contains("1.ics")) {
+                    listOf(EdtEvent("e1", timetableId, "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000"))
+                } else {
+                    listOf(EdtEvent("e2", timetableId, "Physique CM", 1700005000000L, 1700008000000L, "Amphi B", "#00FF00"))
+                }
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addTimetable("TT1", "https://example.com/1.ics")
+        viewModel.addTimetable("TT2", "https://example.com/2.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val tt1Id = viewModel.timetables.value.first { it.name == "TT1" }.id
+
+        viewModel.hideCourseTitle("Maths CM")
+        viewModel.hideCourseTitle("Physique CM")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("Maths CM" in viewModel.hiddenCourseTitles.value)
+        assertTrue("Physique CM" in viewModel.hiddenCourseTitles.value)
+
+        // Unhide all courses for tt1
+        viewModel.unhideAllCoursesForTimetable(tt1Id)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse("Maths CM" in viewModel.hiddenCourseTitles.value)
+        assertTrue("Physique CM" in viewModel.hiddenCourseTitles.value)
+    }
 }
