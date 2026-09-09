@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,7 +26,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AddTimetableDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, url: String) -> Unit
+    onConfirm: (name: String, url: String) -> Unit,
+    onScanQrCodeClick: (() -> Unit)? = null
 ) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
@@ -46,6 +51,21 @@ fun AddTimetableDialog(
                     value = url,
                     onValueChange = { url = it },
                     label = { Text("URL (ICS)") },
+                    trailingIcon = if (onScanQrCodeClick != null) {
+                        {
+                            IconButton(
+                                onClick = {
+                                    onDismiss()
+                                    onScanQrCodeClick()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.QrCodeScanner,
+                                    contentDescription = "Scanner un QR Code"
+                                )
+                            }
+                        }
+                    } else null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

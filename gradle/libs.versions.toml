@@ -17,6 +17,8 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
 kotlinx-collections-immutable = "0.3.8"
 material3 = "1.11.0-alpha07"
+zxing = "3.5.4"
+androidx-camera = "1.6.2"
 
 [libraries]
 kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
@@ -39,6 +41,11 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+androidx-cameraCore = { module = "androidx.camera:camera-core", version.ref = "androidx-camera" }
+androidx-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "androidx-camera" }
+androidx-cameraLifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidx-camera" }
+androidx-cameraView = { module = "androidx.camera:camera-view", version.ref = "androidx-camera" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

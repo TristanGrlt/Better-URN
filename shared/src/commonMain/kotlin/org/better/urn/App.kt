@@ -33,6 +33,7 @@ import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.ImageViewerOverlay
 import org.better.urn.ui.components.M3DownloadNotificationBanner
 import org.better.urn.ui.components.PdfViewerOverlay
+import org.better.urn.ui.components.QrScannerSheet
 import org.better.urn.ui.components.VideoPlayerOverlay
 import org.better.urn.ui.edt.EdtScreen
 import org.better.urn.ui.edt.EdtUiState
@@ -312,6 +313,7 @@ fun App(
                     val successState = edtUiState as? EdtUiState.Success
 
                     var showAddDialogInSettings by remember { mutableStateOf(false) }
+                    var showQrScannerInSettings by remember { mutableStateOf(false) }
                     var showAdeTutorialInSettings by remember { mutableStateOf(false) }
 
                     EdtManagementSheet(
@@ -340,6 +342,20 @@ fun App(
                             onConfirm = { name, url ->
                                 edtViewModel.addTimetable(name, url)
                                 showAddDialogInSettings = false
+                            },
+                            onScanQrCodeClick = {
+                                showAddDialogInSettings = false
+                                showQrScannerInSettings = true
+                            }
+                        )
+                    }
+
+                    if (showQrScannerInSettings) {
+                        QrScannerSheet(
+                            onDismiss = { showQrScannerInSettings = false },
+                            onConfirm = { name, url ->
+                                edtViewModel.addTimetable(name, url)
+                                showQrScannerInSettings = false
                             }
                         )
                     }

@@ -65,6 +65,7 @@ import org.better.urn.data.formatWeekRange
 import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.groupEventsAndInsertBreaks
 import org.better.urn.ui.components.M3CoursesLoadingView
+import org.better.urn.ui.components.QrScannerSheet
 import org.better.urn.ui.edt.components.AddChoiceSheet
 import org.better.urn.ui.edt.components.AddTimetableDialog
 import org.better.urn.ui.edt.components.AdeTutorialSheet
@@ -98,6 +99,7 @@ fun EdtScreen(
     val hiddenEventIds by viewModel.hiddenEventIds.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showQrScannerSheet by remember { mutableStateOf(false) }
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddChoiceSheet by remember { mutableStateOf(false) }
     var showAdeTutorialSheet by remember { mutableStateOf(false) }
@@ -479,6 +481,10 @@ fun EdtScreen(
                     showAddChoiceSheet = false
                     showAddDialog = true
                 },
+                onScanQrCodeClick = {
+                    showAddChoiceSheet = false
+                    showQrScannerSheet = true
+                },
                 onAddManualCourseClick = {
                     showAddChoiceSheet = false
                     showAddCourseDialog = true
@@ -486,6 +492,16 @@ fun EdtScreen(
                 onOpenAdeTutorial = {
                     showAddChoiceSheet = false
                     showAdeTutorialSheet = true
+                }
+            )
+        }
+
+        if (showQrScannerSheet) {
+            QrScannerSheet(
+                onDismiss = { showQrScannerSheet = false },
+                onConfirm = { name, url ->
+                    viewModel.addTimetable(name, url)
+                    showQrScannerSheet = false
                 }
             )
         }
@@ -543,6 +559,10 @@ fun EdtScreen(
                 onConfirm = { name, url ->
                     viewModel.addTimetable(name, url)
                     showAddDialog = false
+                },
+                onScanQrCodeClick = {
+                    showAddDialog = false
+                    showQrScannerSheet = true
                 }
             )
         }

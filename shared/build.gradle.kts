@@ -95,6 +95,10 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.cameraCore)
+            implementation(libs.androidx.camera2)
+            implementation(libs.androidx.cameraLifecycle)
+            implementation(libs.androidx.cameraView)
         }
         jvmMain.dependencies {
             val osName = System.getProperty("os.name").lowercase()
@@ -132,6 +136,7 @@ kotlin {
             api(libs.kotlinx.datetime)
             implementation("media.kamel:kamel-image:0.9.4")
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
+            implementation(libs.zxing.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
