@@ -243,9 +243,9 @@ fun SettingsScreen(
                     }
                 }
 
-                // Section: Apparence
+                // Section: Général (Apparence & Navigation de démarrage)
                 item {
-                    SettingsCardGroup(title = "Apparence") {
+                    SettingsCardGroup(title = "Général") {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -301,19 +301,9 @@ fun SettingsScreen(
                                     }
                                 }
                             }
-                        }
-                    }
-                }
 
-                // Section: Navigation
-                item {
-                    SettingsCardGroup(title = "Navigation") {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -366,9 +356,19 @@ fun SettingsScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
 
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
+                // Section: Emploi du temps (EDT)
+                item {
+                    SettingsCardGroup(title = "Emploi du temps (EDT)") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -389,7 +389,7 @@ fun SettingsScreen(
                                 }
                                 Column {
                                     Text(
-                                        text = "Vue EDT par défaut",
+                                        text = "Vue par défaut",
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Medium
                                     )
