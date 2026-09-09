@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,24 +48,23 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * Modes for the choice bottom sheet: main selection or course-specific options.
+ * Screen modes within the choice bottom sheet.
  */
 enum class AddChoiceMode {
     MAIN_MENU,
-    COURSE_OPTIONS
+    CALENDAR_OPTIONS
 }
 
 /**
- * Bottom sheet allowing users to choose between adding a timetable calendar or adding a course,
- * with options for URL import, QR code notice, manual course entry, and ADE tutorial access.
+ * Bottom sheet allowing users to choose between adding a timetable calendar (via URL, QR code, or ADE tutorial)
+ * or creating a custom course directly.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddChoiceSheet(
     onDismiss: () -> Unit,
-    onAddCalendarClick: () -> Unit,
+    onAddCalendarUrlClick: () -> Unit,
     onAddManualCourseClick: () -> Unit,
-    onAddCourseUrlClick: () -> Unit,
     onOpenAdeTutorial: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -82,17 +81,29 @@ fun AddChoiceSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 8.dp)
         ) {
-            // Header bar
+            // Header bar with navigation and close action
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = if (mode == AddChoiceMode.MAIN_MENU) "Que souhaitez-vous ajouter ?" else "Ajouter un cours",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (mode == AddChoiceMode.CALENDAR_OPTIONS) {
+                        IconButton(onClick = { mode = AddChoiceMode.MAIN_MENU }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Retour"
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = if (mode == AddChoiceMode.MAIN_MENU) "Que souhaitez-vous ajouter ?" else "Ajouter un calendrier",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
@@ -105,14 +116,11 @@ fun AddChoiceSheet(
 
             when (mode) {
                 AddChoiceMode.MAIN_MENU -> {
-                    // Option 1: Ajouter un calendrier
+                    // Option 1: Ajouter un calendrier -> leads to URL / QR Code / ADE tutorial choices
                     OutlinedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                onDismiss()
-                                onAddCalendarClick()
-                            },
+                            .clickable { mode = AddChoiceMode.CALENDAR_OPTIONS },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = MaterialTheme.colorScheme.surface
@@ -149,7 +157,7 @@ fun AddChoiceSheet(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Importer un emploi du temps (ADE)",
+                                    text = "Importer un emploi du temps via URL ou QR Code",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -165,11 +173,14 @@ fun AddChoiceSheet(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Option 2: Ajouter un cours
+                    // Option 2: Ajouter un cours -> directly opens single custom course creation window
                     OutlinedCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { mode = AddChoiceMode.COURSE_OPTIONS },
+                            .clickable {
+                                onDismiss()
+                                onAddManualCourseClick()
+                            },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = MaterialTheme.colorScheme.surface
@@ -187,7 +198,7 @@ fun AddChoiceSheet(
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.School,
+                                    imageVector = Icons.Rounded.Edit,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier
@@ -206,7 +217,7 @@ fun AddChoiceSheet(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "création manuelle",
+                                    text = "Créer un cours manuellement (matière, horaire, salle)",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -221,14 +232,14 @@ fun AddChoiceSheet(
                     }
                 }
 
-                AddChoiceMode.COURSE_OPTIONS -> {
-                    // Option A: Lien URL (ICS) - Implemented
+                AddChoiceMode.CALENDAR_OPTIONS -> {
+                    // Choice A: Lien URL (ICS)
                     OutlinedCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 onDismiss()
-                                onAddCourseUrlClick()
+                                onAddCalendarUrlClick()
                             },
                         shape = RoundedCornerShape(16.dp)
                     ) {
@@ -262,7 +273,7 @@ fun AddChoiceSheet(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Saisir l'URL d'export ICalendar",
+                                    text = "Saisir l'URL d'export ICalendar de votre emploi du temps",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -278,7 +289,7 @@ fun AddChoiceSheet(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Option B: QR Code - Not yet implemented
+                    // Choice B: Code QR ADE (not yet implemented)
                     OutlinedCard(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -348,65 +359,9 @@ fun AddChoiceSheet(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Option C: Créer manuellement
-                    OutlinedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onDismiss()
-                                onAddManualCourseClick()
-                            },
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Edit,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .size(24.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Création manuelle",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Saisir les informations d'un cours spécifique",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Prominent ADE tutorial button card
+                    // Choice C: Prominent ADE tutorial button card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

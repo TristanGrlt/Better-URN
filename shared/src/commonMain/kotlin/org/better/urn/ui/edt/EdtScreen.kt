@@ -76,7 +76,6 @@ import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
 import org.better.urn.ui.edt.components.ManualCourseDialog
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -476,17 +475,13 @@ fun EdtScreen(
         if (showAddChoiceSheet) {
             AddChoiceSheet(
                 onDismiss = { showAddChoiceSheet = false },
-                onAddCalendarClick = {
+                onAddCalendarUrlClick = {
                     showAddChoiceSheet = false
                     showAddDialog = true
                 },
                 onAddManualCourseClick = {
                     showAddChoiceSheet = false
                     showAddCourseDialog = true
-                },
-                onAddCourseUrlClick = {
-                    showAddChoiceSheet = false
-                    showAddDialog = true
                 },
                 onOpenAdeTutorial = {
                     showAddChoiceSheet = false
@@ -548,10 +543,6 @@ fun EdtScreen(
                 onConfirm = { name, url ->
                     viewModel.addTimetable(name, url)
                     showAddDialog = false
-                },
-                onOpenAdeTutorial = {
-                    showAddDialog = false
-                    showAdeTutorialSheet = true
                 }
             )
         }

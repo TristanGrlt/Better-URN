@@ -1,12 +1,13 @@
 package org.better.urn.ui.edt.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,9 +39,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import betterurn.shared.generated.resources.Res
@@ -95,7 +96,8 @@ fun AdeTutorialSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val pagerState = rememberPagerState(initialPage = 0) { TUTORIAL_STEPS.size }
     val coroutineScope = rememberCoroutineScope()
-    val isDarkTheme = isSystemInDarkTheme()
+    // Resolves current theme dynamically using active MaterialTheme surface color luminance
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -164,7 +166,7 @@ fun AdeTutorialSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Illustration image for the current step
+                    // Illustration image card filling container uniformly
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -175,14 +177,19 @@ fun AdeTutorialSheet(
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Image(
-                            painter = stepPainter,
-                            contentDescription = "Illustration étape ${step.stepNumber}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = stepPainter,
+                                contentDescription = "Illustration étape ${step.stepNumber}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

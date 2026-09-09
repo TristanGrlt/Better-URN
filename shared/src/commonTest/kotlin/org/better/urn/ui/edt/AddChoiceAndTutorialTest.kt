@@ -12,7 +12,7 @@ class AddChoiceAndTutorialTest {
         val modes = AddChoiceMode.entries
         assertEquals(2, modes.size)
         assertEquals(AddChoiceMode.MAIN_MENU, modes[0])
-        assertEquals(AddChoiceMode.COURSE_OPTIONS, modes[1])
+        assertEquals(AddChoiceMode.CALENDAR_OPTIONS, modes[1])
     }
 
     @Test

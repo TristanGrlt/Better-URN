@@ -340,10 +340,6 @@ fun App(
                             onConfirm = { name, url ->
                                 edtViewModel.addTimetable(name, url)
                                 showAddDialogInSettings = false
-                            },
-                            onOpenAdeTutorial = {
-                                showAddDialogInSettings = false
-                                showAdeTutorialInSettings = true
                             }
                         )
                     }
