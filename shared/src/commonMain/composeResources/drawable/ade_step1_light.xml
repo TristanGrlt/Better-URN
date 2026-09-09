@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Background -->
+    <path
+        android:pathData="M0,0h320v180H0z"
+        android:fillColor="#F8FAFC" />
+    <path
+        android:pathData="M8,8h304v164H8z"
+        android:fillColor="#FFFFFF" />
+    <!-- Left tree navigation panel -->
+    <path
+        android:pathData="M16,16h96v148H16z"
+        android:fillColor="#EFF6FF" />
+    <!-- Tree items -->
+    <path
+        android:pathData="M24,28h72v12H24z"
+        android:fillColor="#3B82F6" />
+    <path
+        android:pathData="M32,48h64v10H32z M32,64h64v10H32z M40,82h56v10H40z M40,98h56v10H40z M48,116h48v12H48z"
+        android:fillColor="#2563EB" />
+    <path
+        android:pathData="M44,112h56v20H44z"
+        android:fillColor="#DBEAFE" />
+    <!-- Right main calendar view -->
+    <path
+        android:pathData="M120,16h184v148H120z"
+        android:fillColor="#F1F5F9" />
+    <path
+        android:pathData="M128,24h168v24H128z"
+        android:fillColor="#E2E8F0" />
+    <path
+        android:pathData="M128,56h52v96H128z M186,56h52v96H186z M244,56h52v96H244z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M132,70h44v32H132z M190,110h44v36H190z M248,80h44v40H248z"
+        android:fillColor="#3B82F6" />
+</vector>

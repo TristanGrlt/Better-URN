@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:pathData="M0,0h320v180H0z"
+        android:fillColor="#0F172A" />
+    <path
+        android:pathData="M8,8h304v164H8z"
+        android:fillColor="#1E293B" />
+    <path
+        android:pathData="M16,16h288v100H16z"
+        android:fillColor="#334155" />
+    <!-- Options box bottom left -->
+    <path
+        android:pathData="M16,124h120v40H16z"
+        android:fillColor="#1E3A8A" />
+    <path
+        android:pathData="M24,130h50v8H24z"
+        android:fillColor="#93C5FD" />
+    <!-- Export Button highlighted -->
+    <path
+        android:pathData="M84,130h44v28H84z"
+        android:fillColor="#3B82F6" />
+    <!-- Calendar icon symbol -->
+    <path
+        android:pathData="M92,136h12v12H92z"
+        android:fillColor="#FFFFFF" />
+    <!-- Arrow out icon symbol -->
+    <path
+        android:pathData="M108,136l8,8m0,-8l-8,8m8,-8h-8"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+</vector>

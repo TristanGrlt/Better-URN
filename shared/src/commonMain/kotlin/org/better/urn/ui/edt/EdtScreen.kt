@@ -65,7 +65,9 @@ import org.better.urn.data.formatWeekRange
 import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.groupEventsAndInsertBreaks
 import org.better.urn.ui.components.M3CoursesLoadingView
+import org.better.urn.ui.edt.components.AddChoiceSheet
 import org.better.urn.ui.edt.components.AddTimetableDialog
+import org.better.urn.ui.edt.components.AdeTutorialSheet
 import org.better.urn.ui.edt.components.BreakDivider
 import org.better.urn.ui.edt.components.CourseDetailSheet
 import org.better.urn.ui.edt.components.EdtDayHeader
@@ -74,7 +76,6 @@ import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
 import org.better.urn.ui.edt.components.ManualCourseDialog
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
-import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
@@ -100,6 +101,7 @@ fun EdtScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddChoiceSheet by remember { mutableStateOf(false) }
+    var showAdeTutorialSheet by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<EdtEvent?>(null) }
     var showManagerSheet by remember { mutableStateOf(false) }
     var showUpcomingTasksSheet by remember { mutableStateOf(false) }
@@ -471,6 +473,34 @@ fun EdtScreen(
             }
         }
 
+        if (showAddChoiceSheet) {
+            AddChoiceSheet(
+                onDismiss = { showAddChoiceSheet = false },
+                onAddCalendarClick = {
+                    showAddChoiceSheet = false
+                    showAddDialog = true
+                },
+                onAddManualCourseClick = {
+                    showAddChoiceSheet = false
+                    showAddCourseDialog = true
+                },
+                onAddCourseUrlClick = {
+                    showAddChoiceSheet = false
+                    showAddDialog = true
+                },
+                onOpenAdeTutorial = {
+                    showAddChoiceSheet = false
+                    showAdeTutorialSheet = true
+                }
+            )
+        }
+
+        if (showAdeTutorialSheet) {
+            AdeTutorialSheet(
+                onDismiss = { showAdeTutorialSheet = false }
+            )
+        }
+
         if (showAddCourseDialog) {
             ManualCourseDialog(
                 onDismiss = { showAddCourseDialog = false },
@@ -518,6 +548,10 @@ fun EdtScreen(
                 onConfirm = { name, url ->
                     viewModel.addTimetable(name, url)
                     showAddDialog = false
+                },
+                onOpenAdeTutorial = {
+                    showAddDialog = false
+                    showAdeTutorialSheet = true
                 }
             )
         }

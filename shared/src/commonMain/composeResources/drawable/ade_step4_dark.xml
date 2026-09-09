@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:pathData="M0,0h320v180H0z"
+        android:fillColor="#0F172A" />
+    <path
+        android:pathData="M30,16h260v148H30z"
+        android:fillColor="#1E293B" />
+    <path
+        android:pathData="M30,16h260v28H30z"
+        android:fillColor="#1E3A8A" />
+    <path
+        android:pathData="M42,24h100v12H42z"
+        android:fillColor="#93C5FD" />
+    <!-- QR Code illustration -->
+    <path
+        android:pathData="M46,56h72v72H46z"
+        android:fillColor="#334155" />
+    <path
+        android:pathData="M52,62h20v20H52z M92,62h20v20H92z M52,102h20v20H52z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M56,66h12v12H56z M96,66h12v12H96z M56,106h12v12H56z"
+        android:fillColor="#0F172A" />
+    <path
+        android:pathData="M80,88h12v12H80z M96,96h16v16H96z"
+        android:fillColor="#60A5FA" />
+    <!-- URL link text field -->
+    <path
+        android:pathData="M132,64h144v24H132z"
+        android:fillColor="#1E3A8A" />
+    <path
+        android:pathData="M140,72h120v8H140z"
+        android:fillColor="#93C5FD" />
+    <path
+        android:pathData="M132,100h100v20H132z"
+        android:fillColor="#3B82F6" />
+    <path
+        android:pathData="M148,106h68v8H148z"
+        android:fillColor="#FFFFFF" />
+</vector>

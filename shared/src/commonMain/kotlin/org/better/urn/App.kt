@@ -38,6 +38,7 @@ import org.better.urn.ui.edt.EdtScreen
 import org.better.urn.ui.edt.EdtUiState
 import org.better.urn.ui.edt.EdtViewModel
 import org.better.urn.ui.edt.components.AddTimetableDialog
+import org.better.urn.ui.edt.components.AdeTutorialSheet
 import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
@@ -311,6 +312,7 @@ fun App(
                     val successState = edtUiState as? EdtUiState.Success
 
                     var showAddDialogInSettings by remember { mutableStateOf(false) }
+                    var showAdeTutorialInSettings by remember { mutableStateOf(false) }
 
                     EdtManagementSheet(
                         timetables = timetables,
@@ -338,7 +340,17 @@ fun App(
                             onConfirm = { name, url ->
                                 edtViewModel.addTimetable(name, url)
                                 showAddDialogInSettings = false
+                            },
+                            onOpenAdeTutorial = {
+                                showAddDialogInSettings = false
+                                showAdeTutorialInSettings = true
                             }
+                        )
+                    }
+
+                    if (showAdeTutorialInSettings) {
+                        AdeTutorialSheet(
+                            onDismiss = { showAdeTutorialInSettings = false }
                         )
                     }
                 }
