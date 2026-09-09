@@ -79,12 +79,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.rememberModalBottomSheetState
+import org.better.urn.data.EdtViewMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EdtScreen(
     onProfileClick: (() -> Unit)? = null,
-    viewModel: EdtViewModel = viewModel { EdtViewModel() }
+    viewModel: EdtViewModel = viewModel { EdtViewModel() },
+    initialViewMode: EdtViewMode = EdtViewMode.AGENDA
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val timetables by viewModel.timetables.collectAsState()
@@ -106,7 +108,11 @@ fun EdtScreen(
     }
 
     val tabs = remember { listOf("Agenda", "Semaine") }
-    val mainPagerState = rememberPagerState(initialPage = 0) { tabs.size }
+    val initialPage = when (initialViewMode) {
+        EdtViewMode.AGENDA -> 0
+        EdtViewMode.SEMAINE -> 1
+    }
+    val mainPagerState = rememberPagerState(initialPage = initialPage) { tabs.size }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
