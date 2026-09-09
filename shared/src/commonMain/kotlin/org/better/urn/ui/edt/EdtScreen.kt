@@ -21,15 +21,17 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
@@ -57,20 +59,18 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.better.urn.data.AgendaDayItem
+import org.better.urn.data.EdtEvent
 import org.better.urn.data.formatWeekRange
 import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.groupEventsAndInsertBreaks
 import org.better.urn.ui.components.M3CoursesLoadingView
 import org.better.urn.ui.edt.components.AddTimetableDialog
 import org.better.urn.ui.edt.components.BreakDivider
+import org.better.urn.ui.edt.components.CourseDetailSheet
 import org.better.urn.ui.edt.components.EdtDayHeader
 import org.better.urn.ui.edt.components.EdtEventCard
+import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
-import org.better.urn.ui.edt.components.TimetableManagerSheet
-
-import androidx.compose.material.icons.automirrored.rounded.Assignment
-import org.better.urn.data.EdtEvent
-import org.better.urn.ui.edt.components.CourseDetailSheet
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -133,8 +133,8 @@ fun EdtScreen(
                     }
                     IconButton(onClick = { showManagerSheet = true }) {
                         Icon(
-                            imageVector = Icons.Rounded.FilterList,
-                            contentDescription = "Filtrer les calendriers"
+                            imageVector = Icons.Rounded.Tune,
+                            contentDescription = "Centre de gestion EDT"
                         )
                     }
                     IconButton(
@@ -157,219 +157,18 @@ fun EdtScreen(
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
         ) {
-            HorizontalPager(
-                state = mainPagerState,
-                // Only allow swiping from Agenda (page 0) to Semaine (page 1).
-                // Disabling swipe on Semaine ensures horizontal swipes on Semaine navigate weeks.
-                userScrollEnabled = EdtPagerPolicy.isOuterSwipeEnabled(mainPagerState.currentPage),
-                modifier = Modifier.fillMaxSize()
-            ) { mainPage ->
-                when (mainPage) {
-                    0 -> { // Agenda View
-                    when (val state = uiState) {
-                        is EdtUiState.Loading -> {
-                            M3CoursesLoadingView(
-                                message = "Chargement de l'emploi du temps...",
-                                subtitle = "Récupération de vos cours"
-                            )
-                        }
-                        is EdtUiState.Success -> {
-                            if (state.events.isEmpty()) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Aucun événement à afficher",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            } else {
-                                val timeZone = remember { TimeZone.currentSystemDefault() }
-                                val today = remember {
-                                    Clock.System.now().toLocalDateTime(timeZone).date
-                                }
-                                val groupedEvents = remember(state.events) {
-                                    state.events.groupBy { event ->
-                                        Instant.fromEpochMilliseconds(event.startMs)
-                                            .toLocalDateTime(timeZone)
-                                            .date
-                                    }
-                                }
-
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.TopCenter
-                                ) {
-                                    LazyColumn(
-                                        modifier = Modifier
-                                            .widthIn(max = 800.dp)
-                                            .fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = 88.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        groupedEvents.entries.forEachIndexed { groupIndex, (date, dayEvents) ->
-                                            if (groupIndex > 0) {
-                                                item(key = "sep_$date") {
-                                                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                                                        Spacer(modifier = Modifier.height(16.dp))
-                                                        HorizontalDivider(
-                                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                                        )
-                                                        Spacer(modifier = Modifier.height(12.dp))
-                                                    }
-                                                }
-                                            }
-
-                                            stickyHeader(key = "header_$date") {
-                                                Surface(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    color = MaterialTheme.colorScheme.surface
-                                                ) {
-                                                    EdtDayHeader(
-                                                        date = date,
-                                                        today = today,
-                                                        modifier = Modifier.padding(
-                                                            horizontal = 16.dp,
-                                                            vertical = if (groupIndex == 0) 8.dp else 4.dp
-                                                        )
-                                                    )
-                                                }
-                                            }
-
-                                            val dayItems = groupEventsAndInsertBreaks(dayEvents)
-                                            items(
-                                                items = dayItems,
-                                                key = { item ->
-                                                    when (item) {
-                                                        is AgendaDayItem.EventGroup -> "group_${item.events.first().id}_${item.events.size}"
-                                                        is AgendaDayItem.Break -> "break_${date}_${item.durationMinutes}_${dayItems.indexOf(item)}"
-                                                    }
-                                                }
-                                            ) { item ->
-                                                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                                    when (item) {
-                                                        is AgendaDayItem.EventGroup -> {
-                                                            if (item.events.size == 1) {
-                                                                val event = item.events.first()
-                                                                EdtEventCard(
-                                                                    event = event,
-                                                                    hasPendingTasks = pendingTaskSignatures.contains(event.signature),
-                                                                    onClick = { selectedEventForDetail = event }
-                                                                )
-                                                            } else {
-                                                                Row(
-                                                                    modifier = Modifier.fillMaxWidth(),
-                                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                                ) {
-                                                                    item.events.forEach { event ->
-                                                                        EdtEventCard(
-                                                                            event = event,
-                                                                            hasPendingTasks = pendingTaskSignatures.contains(event.signature),
-                                                                            onClick = { selectedEventForDetail = event },
-                                                                            modifier = Modifier.weight(1f)
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        is AgendaDayItem.Break -> {
-                                                            BreakDivider(durationMinutes = item.durationMinutes)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        is EdtUiState.Error -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = state.message,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Button(onClick = { viewModel.loadEvents() }) {
-                                        Text("Réessayer")
-                                    }
-                                }
-                            }
-                        }
-                    }
+            Column(modifier = Modifier.fillMaxSize()) {
+                if ((uiState as? EdtUiState.Success)?.isRefreshing == true) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
-                1 -> { // Semaine View
-                    val timeZone = remember { TimeZone.currentSystemDefault() }
-                    val today = remember { Clock.System.now().toLocalDateTime(timeZone).date }
-                    val initialWeekStart = remember(today) { getMondayOfWeek(today) }
 
-                    val initialPage = 1000
-                    val pagerState = rememberPagerState(initialPage = initialPage) { 2000 }
-                    val coroutineScope = rememberCoroutineScope()
-
-                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                        val isDesktop = maxWidth >= 600.dp
-                        val currentWeekOffset = pagerState.currentPage - initialPage
-                        val currentWeekStart = remember(initialWeekStart, currentWeekOffset) {
-                            LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + currentWeekOffset * 7)
-                        }
-
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            if (isDesktop) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                            contentDescription = "Semaine précédente"
-                                        )
-                                    }
-
-                                    Text(
-                                        text = formatWeekRange(currentWeekStart),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    IconButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                                            contentDescription = "Semaine suivante"
-                                        )
-                                    }
-                                }
-
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            }
-
+                HorizontalPager(
+                    state = mainPagerState,
+                    userScrollEnabled = EdtPagerPolicy.isOuterSwipeEnabled(mainPagerState.currentPage),
+                    modifier = Modifier.weight(1f)
+                ) { mainPage ->
+                    when (mainPage) {
+                        0 -> { // Agenda View
                             when (val state = uiState) {
                                 is EdtUiState.Loading -> {
                                     M3CoursesLoadingView(
@@ -389,22 +188,102 @@ fun EdtScreen(
                                             )
                                         }
                                     } else {
-                                        HorizontalPager(
-                                            state = pagerState,
-                                            modifier = Modifier.fillMaxSize()
-                                        ) { page ->
-                                            val weekOffset = page - initialPage
-                                            val pageWeekStart = remember(initialWeekStart, weekOffset) {
-                                                LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+                                        val timeZone = remember { TimeZone.currentSystemDefault() }
+                                        val today = remember {
+                                            Clock.System.now().toLocalDateTime(timeZone).date
+                                        }
+                                        val groupedEvents = remember(state.events) {
+                                            state.events.groupBy { event ->
+                                                Instant.fromEpochMilliseconds(event.startMs)
+                                                    .toLocalDateTime(timeZone)
+                                                    .date
                                             }
+                                        }
 
-                                            EdtWeekView(
-                                                events = state.events,
-                                                weekStart = pageWeekStart,
-                                                pendingTaskSignatures = pendingTaskSignatures,
-                                                onEventClick = { event -> selectedEventForDetail = event },
-                                                modifier = Modifier.fillMaxSize()
-                                            )
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.TopCenter
+                                        ) {
+                                            LazyColumn(
+                                                modifier = Modifier
+                                                    .widthIn(max = 800.dp)
+                                                    .fillMaxSize(),
+                                                contentPadding = PaddingValues(bottom = 88.dp),
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                groupedEvents.entries.forEachIndexed { groupIndex, (date, dayEvents) ->
+                                                    if (groupIndex > 0) {
+                                                        item(key = "sep_$date") {
+                                                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                                                                Spacer(modifier = Modifier.height(16.dp))
+                                                                HorizontalDivider(
+                                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                                                )
+                                                                Spacer(modifier = Modifier.height(12.dp))
+                                                            }
+                                                        }
+                                                    }
+
+                                                    stickyHeader(key = "header_$date") {
+                                                        Surface(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            color = MaterialTheme.colorScheme.surface
+                                                        ) {
+                                                            EdtDayHeader(
+                                                                date = date,
+                                                                today = today,
+                                                                modifier = Modifier.padding(
+                                                                    horizontal = 16.dp,
+                                                                    vertical = if (groupIndex == 0) 8.dp else 4.dp
+                                                                )
+                                                            )
+                                                        }
+                                                    }
+
+                                                    val dayItems = groupEventsAndInsertBreaks(dayEvents)
+                                                    items(
+                                                        items = dayItems,
+                                                        key = { item ->
+                                                            when (item) {
+                                                                is AgendaDayItem.EventGroup -> "group_${item.events.first().id}_${item.events.size}"
+                                                                is AgendaDayItem.Break -> "break_${date}_${item.durationMinutes}_${dayItems.indexOf(item)}"
+                                                            }
+                                                        }
+                                                    ) { item ->
+                                                        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                                            when (item) {
+                                                                is AgendaDayItem.EventGroup -> {
+                                                                    if (item.events.size == 1) {
+                                                                        val event = item.events.first()
+                                                                        EdtEventCard(
+                                                                            event = event,
+                                                                            hasPendingTasks = pendingTaskSignatures.contains(event.signature),
+                                                                            onClick = { selectedEventForDetail = event }
+                                                                        )
+                                                                    } else {
+                                                                        Row(
+                                                                            modifier = Modifier.fillMaxWidth(),
+                                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                                        ) {
+                                                                            item.events.forEach { event ->
+                                                                                EdtEventCard(
+                                                                                    event = event,
+                                                                                    hasPendingTasks = pendingTaskSignatures.contains(event.signature),
+                                                                                    onClick = { selectedEventForDetail = event },
+                                                                                    modifier = Modifier.weight(1f)
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                                is AgendaDayItem.Break -> {
+                                                                    BreakDivider(durationMinutes = item.durationMinutes)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -431,10 +310,135 @@ fun EdtScreen(
                                 }
                             }
                         }
+                        1 -> { // Semaine View
+                            val timeZone = remember { TimeZone.currentSystemDefault() }
+                            val today = remember { Clock.System.now().toLocalDateTime(timeZone).date }
+                            val initialWeekStart = remember(today) { getMondayOfWeek(today) }
+
+                            val initialPage = 1000
+                            val pagerState = rememberPagerState(initialPage = initialPage) { 2000 }
+                            val coroutineScope = rememberCoroutineScope()
+
+                            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                                val isDesktop = maxWidth >= 600.dp
+                                val currentWeekOffset = pagerState.currentPage - initialPage
+                                val currentWeekStart = remember(initialWeekStart, currentWeekOffset) {
+                                    LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + currentWeekOffset * 7)
+                                }
+
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    if (isDesktop) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                                    contentDescription = "Semaine précédente"
+                                                )
+                                            }
+
+                                            Text(
+                                                text = formatWeekRange(currentWeekStart),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.weight(1f)
+                                            )
+
+                                            IconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                                                    contentDescription = "Semaine suivante"
+                                                )
+                                            }
+                                        }
+
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    }
+
+                                    when (val state = uiState) {
+                                        is EdtUiState.Loading -> {
+                                            M3CoursesLoadingView(
+                                                message = "Chargement de l'emploi du temps...",
+                                                subtitle = "Récupération de vos cours"
+                                            )
+                                        }
+                                        is EdtUiState.Success -> {
+                                            if (state.events.isEmpty()) {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = "Aucun événement à afficher",
+                                                        style = MaterialTheme.typography.bodyLarge
+                                                    )
+                                                }
+                                            } else {
+                                                HorizontalPager(
+                                                    state = pagerState,
+                                                    modifier = Modifier.fillMaxSize()
+                                                ) { page ->
+                                                    val weekOffset = page - initialPage
+                                                    val pageWeekStart = remember(initialWeekStart, weekOffset) {
+                                                        LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+                                                    }
+
+                                                    EdtWeekView(
+                                                        events = state.events,
+                                                        weekStart = pageWeekStart,
+                                                        pendingTaskSignatures = pendingTaskSignatures,
+                                                        onEventClick = { event -> selectedEventForDetail = event },
+                                                        modifier = Modifier.fillMaxSize()
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        is EdtUiState.Error -> {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(
+                                                        text = state.message,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.error,
+                                                        textAlign = TextAlign.Center
+                                                    )
+                                                    Spacer(modifier = Modifier.height(12.dp))
+                                                    Button(onClick = { viewModel.loadEvents() }) {
+                                                        Text("Réessayer")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }
 
             FloatingActionButton(
                 onClick = { showAddDialog = true },
@@ -460,10 +464,16 @@ fun EdtScreen(
         }
 
         if (showManagerSheet) {
-            TimetableManagerSheet(
+            val successState = uiState as? EdtUiState.Success
+            EdtManagementSheet(
                 timetables = timetables,
-                onToggle = { id -> viewModel.toggleVisibility(id) },
-                onDelete = { id -> viewModel.deleteTimetable(id) },
+                isRefreshing = successState?.isRefreshing ?: false,
+                lastSyncTimestamp = successState?.lastSyncTimestamp,
+                refreshError = successState?.refreshError,
+                onToggleVisibility = { id -> viewModel.toggleVisibility(id) },
+                onDeleteTimetable = { id -> viewModel.deleteTimetable(id) },
+                onAddTimetableClick = { showAddDialog = true },
+                onForceRefresh = { viewModel.loadEvents() },
                 onDismiss = { showManagerSheet = false }
             )
         }

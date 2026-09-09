@@ -20,7 +20,8 @@ open class EdtRepository(
 
     open suspend fun fetchAndParseIcs(
         url: String = DEFAULT_ADE_URL,
-        isDarkTheme: Boolean = false
+        isDarkTheme: Boolean = false,
+        timetableId: String = "default"
     ): List<EdtEvent> {
         val targetUrl = normalizeUrl(url)
         return try {
@@ -30,7 +31,7 @@ open class EdtRepository(
 
             IcsParser.parseIcs(
                 icsContent = responseText,
-                timetableId = "default",
+                timetableId = timetableId,
                 isDarkTheme = isDarkTheme
             )
         } catch (e: Exception) {

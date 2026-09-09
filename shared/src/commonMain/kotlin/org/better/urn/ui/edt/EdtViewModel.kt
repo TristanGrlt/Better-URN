@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.better.urn.data.CacheStorage
+import org.better.urn.data.EdtEvent
 import org.better.urn.data.EdtRepository
 import org.better.urn.data.EdtTask
 import org.better.urn.data.Timetable
@@ -44,12 +45,10 @@ class EdtViewModel(
             try {
                 val savedTimetables = json.decodeFromString<List<Timetable>>(jsonString)
                 _timetables.value = savedTimetables
-                if (savedTimetables.any { it.isVisible }) {
-                    loadEvents()
-                }
             } catch (_: Exception) {
             }
         }
+        loadEvents()
     }
 
     private fun saveTimetables(timetables: List<Timetable>) {
@@ -75,6 +74,34 @@ class EdtViewModel(
         try {
             val jsonString = json.encodeToString(tasks)
             CacheStorage.saveString(KEY_TASKS, jsonString)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun loadCachedEvents(): List<EdtEvent> {
+        val jsonString = CacheStorage.getString(KEY_EVENTS) ?: return emptyList()
+        return try {
+            json.decodeFromString<List<EdtEvent>>(jsonString)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveCachedEvents(events: List<EdtEvent>) {
+        try {
+            val jsonString = json.encodeToString(events)
+            CacheStorage.saveString(KEY_EVENTS, jsonString)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun loadLastSyncTimestamp(): Long? {
+        return CacheStorage.getString(KEY_LAST_SYNC)?.toLongOrNull()
+    }
+
+    private fun saveLastSyncTimestamp(timestamp: Long) {
+        try {
+            CacheStorage.saveString(KEY_LAST_SYNC, timestamp.toString())
         } catch (_: Exception) {
         }
     }
@@ -144,21 +171,59 @@ class EdtViewModel(
     fun loadEvents(isDarkTheme: Boolean = this.isDarkTheme) {
         viewModelScope.launch {
             val visibleTimetables = _timetables.value.filter { it.isVisible }
+            val lastSync = loadLastSyncTimestamp()
+
             if (visibleTimetables.isEmpty()) {
-                _uiState.value = EdtUiState.Success(emptyList())
+                _uiState.value = EdtUiState.Success(
+                    events = emptyList(),
+                    isRefreshing = false,
+                    lastSyncTimestamp = lastSync
+                )
                 return@launch
             }
 
-            _uiState.value = EdtUiState.Loading
+            val cached = loadCachedEvents()
+            val visibleIds = visibleTimetables.map { it.id }.toSet()
+            val filteredCached = cached.filter { it.timetableId in visibleIds || it.timetableId == "default" || visibleIds.isEmpty() }
+
+            if (filteredCached.isNotEmpty()) {
+                _uiState.value = EdtUiState.Success(
+                    events = filteredCached,
+                    isRefreshing = true,
+                    lastSyncTimestamp = lastSync,
+                    refreshError = null
+                )
+            } else {
+                _uiState.value = EdtUiState.Loading
+            }
+
             try {
                 val allEvents = visibleTimetables.flatMap { timetable ->
-                    repository.fetchAndParseIcs(timetable.url, isDarkTheme)
+                    repository.fetchAndParseIcs(timetable.url, isDarkTheme, timetable.id)
                 }.sortedBy { it.startMs }
-                _uiState.value = EdtUiState.Success(allEvents)
-            } catch (e: Exception) {
-                _uiState.value = EdtUiState.Error(
-                    e.message ?: "Erreur inconnue"
+
+                val nowMs = kotlin.time.Clock.System.now().toEpochMilliseconds()
+                saveCachedEvents(allEvents)
+                saveLastSyncTimestamp(nowMs)
+
+                _uiState.value = EdtUiState.Success(
+                    events = allEvents,
+                    isRefreshing = false,
+                    lastSyncTimestamp = nowMs,
+                    refreshError = null
                 )
+            } catch (e: Exception) {
+                val errorMsg = e.message ?: "Erreur inconnue"
+                if (filteredCached.isNotEmpty()) {
+                    _uiState.value = EdtUiState.Success(
+                        events = filteredCached,
+                        isRefreshing = false,
+                        lastSyncTimestamp = lastSync,
+                        refreshError = errorMsg
+                    )
+                } else {
+                    _uiState.value = EdtUiState.Error(errorMsg)
+                }
             }
         }
     }
@@ -166,5 +231,7 @@ class EdtViewModel(
     companion object {
         private const val KEY_TIMETABLES = "edt_timetables"
         private const val KEY_TASKS = "edt_tasks"
+        private const val KEY_EVENTS = "edt_cached_events"
+        private const val KEY_LAST_SYNC = "edt_last_sync_timestamp"
     }
 }

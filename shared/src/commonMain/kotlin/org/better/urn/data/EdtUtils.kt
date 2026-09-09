@@ -502,3 +502,25 @@ fun calculateEventPositions(
 
     return result
 }
+
+/**
+ * Formats last sync timestamp in epoch milliseconds to a user friendly French string.
+ */
+fun formatLastSyncTime(lastSyncMs: Long?, timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    if (lastSyncMs == null || lastSyncMs == 0L) return "Jamais"
+    return try {
+        val now = kotlin.time.Clock.System.now().toLocalDateTime(timeZone)
+        val syncTime = Instant.fromEpochMilliseconds(lastSyncMs).toLocalDateTime(timeZone)
+        val timeStr = "${syncTime.hour.toString().padStart(2, '0')}:${syncTime.minute.toString().padStart(2, '0')}"
+        if (syncTime.date == now.date) {
+            "Aujourd'hui à $timeStr"
+        } else {
+            val day = syncTime.day.toString().padStart(2, '0')
+            val month = (syncTime.month.ordinal + 1).toString().padStart(2, '0')
+            "$day/$month/${syncTime.year} à $timeStr"
+        }
+    } catch (_: Exception) {
+        "Inconnue"
+    }
+}
+
