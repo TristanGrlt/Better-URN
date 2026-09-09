@@ -60,6 +60,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.better.urn.data.AgendaDayItem
 import org.better.urn.data.EdtEvent
+import org.better.urn.data.filterAgendaEvents
 import org.better.urn.data.formatWeekRange
 import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.groupEventsAndInsertBreaks
@@ -177,7 +178,15 @@ fun EdtScreen(
                                     )
                                 }
                                 is EdtUiState.Success -> {
-                                    if (state.events.isEmpty()) {
+                                    val timeZone = remember { TimeZone.currentSystemDefault() }
+                                    val today = remember {
+                                        Clock.System.now().toLocalDateTime(timeZone).date
+                                    }
+                                    val agendaEvents = remember(state.events, today, timeZone) {
+                                        filterAgendaEvents(state.events, today, timeZone)
+                                    }
+
+                                    if (agendaEvents.isEmpty()) {
                                         Box(
                                             modifier = Modifier.fillMaxSize(),
                                             contentAlignment = Alignment.Center
@@ -188,12 +197,8 @@ fun EdtScreen(
                                             )
                                         }
                                     } else {
-                                        val timeZone = remember { TimeZone.currentSystemDefault() }
-                                        val today = remember {
-                                            Clock.System.now().toLocalDateTime(timeZone).date
-                                        }
-                                        val groupedEvents = remember(state.events) {
-                                            state.events.groupBy { event ->
+                                        val groupedEvents = remember(agendaEvents, timeZone) {
+                                            agendaEvents.groupBy { event ->
                                                 Instant.fromEpochMilliseconds(event.startMs)
                                                     .toLocalDateTime(timeZone)
                                                     .date

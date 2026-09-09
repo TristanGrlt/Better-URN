@@ -52,6 +52,23 @@ fun LocalDate.toEndOfDayEpochMs(timeZone: TimeZone = TimeZone.currentSystemDefau
 }
 
 /**
+ * Filters a list of [EdtEvent]s to retain only events occurring today or in the future
+ * relative to [today] in the specified [timeZone]. Past events (where event date < today) are excluded.
+ */
+fun filterAgendaEvents(
+    events: List<EdtEvent>,
+    today: LocalDate,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): List<EdtEvent> {
+    return events.filter { event ->
+        val eventDate = Instant.fromEpochMilliseconds(event.startMs)
+            .toLocalDateTime(timeZone)
+            .date
+        eventDate >= today
+    }
+}
+
+/**
  * Groups overlapping events together in an [AgendaDayItem.EventGroup] and inserts
  * an [AgendaDayItem.Break] when the interval between consecutive events exceeds 20 minutes.
  */

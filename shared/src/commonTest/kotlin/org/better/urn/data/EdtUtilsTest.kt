@@ -268,4 +268,33 @@ class EdtUtilsTest {
         )
         assertEquals(expected, event.signature)
     }
+
+    @Test
+    fun testFilterAgendaEventsFiltersPastEventsAndKeepsTodayAndFuture() {
+        val tz = TimeZone.UTC
+        val today = LocalDate(2026, 9, 15)
+
+        val pastMs = LocalDateTime(2026, Month.SEPTEMBER, 14, 10, 0).toInstant(tz).toEpochMilliseconds()
+        val todayMs = LocalDateTime(2026, Month.SEPTEMBER, 15, 8, 30).toInstant(tz).toEpochMilliseconds()
+        val futureMs = LocalDateTime(2026, Month.SEPTEMBER, 16, 14, 0).toInstant(tz).toEpochMilliseconds()
+
+        val pastEvent = EdtEvent("e1", "tt", "Past Course", pastMs, pastMs + 3600000L, "Room A", "#FF0000")
+        val todayEvent = EdtEvent("e2", "tt", "Today Course", todayMs, todayMs + 3600000L, "Room B", "#00FF00")
+        val futureEvent = EdtEvent("e3", "tt", "Future Course", futureMs, futureMs + 3600000L, "Room C", "#0000FF")
+
+        val events = listOf(pastEvent, todayEvent, futureEvent)
+        val filtered = filterAgendaEvents(events = events, today = today, timeZone = tz)
+
+        assertEquals(2, filtered.size)
+        assertEquals(listOf(todayEvent, futureEvent), filtered)
+    }
+
+    @Test
+    fun testFilterAgendaEventsEmptyList() {
+        val tz = TimeZone.UTC
+        val today = LocalDate(2026, 9, 15)
+
+        val filtered = filterAgendaEvents(events = emptyList(), today = today, timeZone = tz)
+        assertTrue(filtered.isEmpty())
+    }
 }
