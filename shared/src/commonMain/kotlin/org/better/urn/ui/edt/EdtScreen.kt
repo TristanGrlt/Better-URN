@@ -74,7 +74,6 @@ import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
 import org.better.urn.ui.edt.components.ManualCourseDialog
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
-import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ModalBottomSheet
@@ -90,6 +89,9 @@ fun EdtScreen(
     val uiState by viewModel.uiState.collectAsState()
     val timetables by viewModel.timetables.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
+    val allRawEvents by viewModel.allRawEvents.collectAsState()
+    val hiddenCourseTitles by viewModel.hiddenCourseTitles.collectAsState()
+    val hiddenEventIds by viewModel.hiddenEventIds.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showAddCourseDialog by remember { mutableStateOf(false) }
@@ -460,105 +462,6 @@ fun EdtScreen(
             }
         }
 
-        if (showAddChoiceSheet) {
-            val choiceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(
-                onDismissRequest = { showAddChoiceSheet = false },
-                sheetState = choiceSheetState
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "Que souhaitez-vous ajouter ?",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    OutlinedCard(
-                        onClick = {
-                            showAddChoiceSheet = false
-                            showAddCourseDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Event,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Ajouter un cours",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Créer manuellement un cours ponctuel",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    OutlinedCard(
-                        onClick = {
-                            showAddChoiceSheet = false
-                            showAddDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Ajouter un calendrier",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Importer votre emploi du temps via une URL (ex: ADE)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         if (showAddCourseDialog) {
             ManualCourseDialog(
                 onDismiss = { showAddCourseDialog = false },
@@ -614,6 +517,9 @@ fun EdtScreen(
             val successState = uiState as? EdtUiState.Success
             EdtManagementSheet(
                 timetables = timetables,
+                allEvents = allRawEvents,
+                hiddenCourseTitles = hiddenCourseTitles,
+                hiddenEventIds = hiddenEventIds,
                 isRefreshing = successState?.isRefreshing ?: false,
                 lastSyncTimestamp = successState?.lastSyncTimestamp,
                 refreshError = successState?.refreshError,
@@ -621,6 +527,11 @@ fun EdtScreen(
                 onDeleteTimetable = { id -> viewModel.deleteTimetable(id) },
                 onAddTimetableClick = { showAddDialog = true },
                 onForceRefresh = { viewModel.loadEvents() },
+                onToggleCourseTitleVisibility = { courseTitle -> viewModel.toggleCourseTitleVisibility(courseTitle) },
+                onUnhideCourseTitle = { courseTitle -> viewModel.unhideCourseTitle(courseTitle) },
+                onUnhideEvent = { eventId -> viewModel.unhideEvent(eventId) },
+                onUnhideAllCoursesForTimetable = { timetableId -> viewModel.unhideAllCoursesForTimetable(timetableId) },
+                onUnhideAllHidden = { viewModel.unhideAllHidden() },
                 onDismiss = { showManagerSheet = false }
             )
         }
@@ -634,6 +545,8 @@ fun EdtScreen(
                 onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
                 onEditManualEvent = { eventToEdit = it },
                 onDeleteManualEvent = { eventId -> viewModel.deleteManualEvent(eventId) },
+                onHideEvent = { eventId -> viewModel.hideEvent(eventId) },
+                onHideCourseTitle = { courseTitle -> viewModel.hideCourseTitle(courseTitle) },
                 onDismiss = { selectedEventForDetail = null }
             )
         }

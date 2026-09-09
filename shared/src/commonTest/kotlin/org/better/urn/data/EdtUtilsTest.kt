@@ -341,4 +341,51 @@ class EdtUtilsTest {
         assertEquals("SAM.", formatShortDayName(DayOfWeek.SATURDAY))
         assertEquals("DIM.", formatShortDayName(DayOfWeek.SUNDAY))
     }
+
+    @Test
+    fun testFilterVisibleEventsWithHiddenEventIdsAndCourseTitles() {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1000L, 2000L, "A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Maths TD1", 3000L, 4000L, "B", "#FF0000")
+        val e3 = EdtEvent("e3", "tt1", "Physique CM", 5000L, 6000L, "C", "#00FF00")
+        val e4 = EdtEvent("e4", "tt1", "Anglais", 7000L, 8000L, "D", "#0000FF")
+
+        val events = listOf(e1, e2, e3, e4)
+
+        // Test empty filters -> returns all
+        assertEquals(events, filterVisibleEvents(events, emptySet(), emptySet()))
+
+        // Hide specific event e3
+        val filtered1 = filterVisibleEvents(events, setOf("e3"), emptySet())
+        assertEquals(listOf(e1, e2, e4), filtered1)
+
+        // Hide course title "Maths CM" -> hides e1 ("Maths CM") while leaving e2 ("Maths TD1") visible
+        val filtered2 = filterVisibleEvents(events, emptySet(), setOf("Maths CM"))
+        assertEquals(listOf(e2, e3, e4), filtered2)
+
+        // Hide e3 AND course "Maths CM" -> e2 and e4 remain
+        val filtered3 = filterVisibleEvents(events, setOf("e3"), setOf("Maths CM"))
+        assertEquals(listOf(e2, e4), filtered3)
+    }
+
+    @Test
+    fun testExtractUniqueCourseTitles() {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1000L, 2000L, "A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Maths TD1", 3000L, 4000L, "B", "#FF0000")
+        val e3 = EdtEvent("e3", "tt1", "Physique CM", 5000L, 6000L, "C", "#00FF00")
+        val e4 = EdtEvent("e4", "tt2", "Anglais", 7000L, 8000L, "D", "#0000FF")
+
+        val events = listOf(e1, e2, e3, e4)
+
+        // Extract for tt1 -> "Maths CM", "Maths TD1", "Physique CM" (sorted, unique)
+        val tt1Courses = extractUniqueCourseTitles(events, "tt1")
+        assertEquals(listOf("Maths CM", "Maths TD1", "Physique CM"), tt1Courses)
+
+        // Extract for tt2 -> "Anglais"
+        val tt2Courses = extractUniqueCourseTitles(events, "tt2")
+        assertEquals(listOf("Anglais"), tt2Courses)
+
+        // Extract for all (null timetableId) -> "Anglais", "Maths CM", "Maths TD1", "Physique CM"
+        val allCourses = extractUniqueCourseTitles(events, null)
+        assertEquals(listOf("Anglais", "Maths CM", "Maths TD1", "Physique CM"), allCourses)
+    }
 }

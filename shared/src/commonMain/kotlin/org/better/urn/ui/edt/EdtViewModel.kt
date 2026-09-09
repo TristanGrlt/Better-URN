@@ -13,6 +13,7 @@ import org.better.urn.data.EdtEvent
 import org.better.urn.data.EdtRepository
 import org.better.urn.data.EdtTask
 import org.better.urn.data.Timetable
+import org.better.urn.data.filterVisibleEvents
 import org.better.urn.data.normalizeUrl
 
 class EdtViewModel(
@@ -37,10 +38,47 @@ class EdtViewModel(
     private val _manualEvents = MutableStateFlow<List<EdtEvent>>(emptyList())
     val manualEvents: StateFlow<List<EdtEvent>> = _manualEvents.asStateFlow()
 
+    private val _hiddenEventIds = MutableStateFlow<Set<String>>(emptySet())
+    val hiddenEventIds: StateFlow<Set<String>> = _hiddenEventIds.asStateFlow()
+
+    private val _hiddenCourseTitles = MutableStateFlow<Set<String>>(emptySet())
+    val hiddenCourseTitles: StateFlow<Set<String>> = _hiddenCourseTitles.asStateFlow()
+
+    private val _allRawEvents = MutableStateFlow<List<EdtEvent>>(emptyList())
+    val allRawEvents: StateFlow<List<EdtEvent>> = _allRawEvents.asStateFlow()
+
     init {
+        loadSavedHiddenEventsAndCourses()
         loadSavedManualEvents()
         loadSavedTimetables()
         loadSavedTasks()
+    }
+
+    private fun loadSavedHiddenEventsAndCourses() {
+        val hiddenEventsJson = CacheStorage.getString(KEY_HIDDEN_EVENT_IDS)
+        if (!hiddenEventsJson.isNullOrBlank()) {
+            try {
+                _hiddenEventIds.value = json.decodeFromString<Set<String>>(hiddenEventsJson)
+            } catch (_: Exception) {}
+        }
+        val hiddenTitlesJson = CacheStorage.getString(KEY_HIDDEN_COURSE_TITLES)
+        if (!hiddenTitlesJson.isNullOrBlank()) {
+            try {
+                _hiddenCourseTitles.value = json.decodeFromString<Set<String>>(hiddenTitlesJson)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun saveHiddenEventIds(set: Set<String>) {
+        try {
+            CacheStorage.saveString(KEY_HIDDEN_EVENT_IDS, json.encodeToString(set))
+        } catch (_: Exception) {}
+    }
+
+    private fun saveHiddenCourseTitles(set: Set<String>) {
+        try {
+            CacheStorage.saveString(KEY_HIDDEN_COURSE_TITLES, json.encodeToString(set))
+        } catch (_: Exception) {}
     }
 
     private fun loadSavedManualEvents() {
@@ -233,6 +271,97 @@ class EdtViewModel(
         loadEvents()
     }
 
+    fun hideEvent(eventId: String) {
+        val updated = _hiddenEventIds.value + eventId
+        _hiddenEventIds.value = updated
+        saveHiddenEventIds(updated)
+        updateVisibleEvents()
+    }
+
+    fun unhideEvent(eventId: String) {
+        val updated = _hiddenEventIds.value - eventId
+        _hiddenEventIds.value = updated
+        saveHiddenEventIds(updated)
+        updateVisibleEvents()
+    }
+
+    fun hideCourseTitle(courseTitle: String) {
+        val title = courseTitle.trim()
+        if (title.isBlank()) return
+        val updated = _hiddenCourseTitles.value + title
+        _hiddenCourseTitles.value = updated
+        saveHiddenCourseTitles(updated)
+        updateVisibleEvents()
+    }
+
+    fun unhideCourseTitle(courseTitle: String) {
+        val title = courseTitle.trim()
+        val updatedTitles = _hiddenCourseTitles.value - title
+        _hiddenCourseTitles.value = updatedTitles
+        saveHiddenCourseTitles(updatedTitles)
+
+        val rawList = _allRawEvents.value
+        val eventIdsToRemove = rawList.filter {
+            it.title.trim() == title
+        }.map { it.id }.toSet()
+
+        if (eventIdsToRemove.isNotEmpty()) {
+            val updatedEvents = _hiddenEventIds.value - eventIdsToRemove
+            _hiddenEventIds.value = updatedEvents
+            saveHiddenEventIds(updatedEvents)
+        }
+
+        updateVisibleEvents()
+    }
+
+    fun toggleCourseTitleVisibility(courseTitle: String) {
+        val title = courseTitle.trim()
+        if (title in _hiddenCourseTitles.value) {
+            unhideCourseTitle(title)
+        } else {
+            hideCourseTitle(title)
+        }
+    }
+
+    fun unhideAllCoursesForTimetable(timetableId: String) {
+        val rawList = _allRawEvents.value.filter { it.timetableId == timetableId }
+        val titlesToRemove = rawList.map { it.title.trim() }.toSet()
+        val eventIdsToRemove = rawList.map { it.id }.toSet()
+
+        val updatedTitles = _hiddenCourseTitles.value - titlesToRemove
+        _hiddenCourseTitles.value = updatedTitles
+        saveHiddenCourseTitles(updatedTitles)
+
+        val updatedEvents = _hiddenEventIds.value - eventIdsToRemove
+        _hiddenEventIds.value = updatedEvents
+        saveHiddenEventIds(updatedEvents)
+
+        updateVisibleEvents()
+    }
+
+    fun unhideAllHidden() {
+        _hiddenCourseTitles.value = emptySet()
+        _hiddenEventIds.value = emptySet()
+        saveHiddenCourseTitles(emptySet())
+        saveHiddenEventIds(emptySet())
+        updateVisibleEvents()
+    }
+
+    private fun updateVisibleEvents() {
+        val rawList = _allRawEvents.value
+        val visible = filterVisibleEvents(rawList, _hiddenEventIds.value, _hiddenCourseTitles.value)
+        val currentState = _uiState.value
+        if (currentState is EdtUiState.Success) {
+            _uiState.value = currentState.copy(events = visible)
+        } else {
+            _uiState.value = EdtUiState.Success(
+                events = visible,
+                isRefreshing = false,
+                lastSyncTimestamp = loadLastSyncTimestamp()
+            )
+        }
+    }
+
     fun loadEvents(isDarkTheme: Boolean = this.isDarkTheme) {
         viewModelScope.launch {
             val visibleTimetables = _timetables.value.filter { it.isVisible }
@@ -240,8 +369,11 @@ class EdtViewModel(
             val manualList = _manualEvents.value
 
             if (visibleTimetables.isEmpty()) {
+                val combined = manualList.sortedBy { it.startMs }
+                _allRawEvents.value = combined
+                val visible = filterVisibleEvents(combined, _hiddenEventIds.value, _hiddenCourseTitles.value)
                 _uiState.value = EdtUiState.Success(
-                    events = manualList.sortedBy { it.startMs },
+                    events = visible,
                     isRefreshing = false,
                     lastSyncTimestamp = lastSync
                 )
@@ -252,10 +384,19 @@ class EdtViewModel(
             val visibleIds = visibleTimetables.map { it.id }.toSet()
             val filteredCached = cached.filter { it.timetableId in visibleIds || it.timetableId == "default" || visibleIds.isEmpty() }
             val combinedCached = (filteredCached + manualList).distinctBy { it.id }.sortedBy { it.startMs }
+            _allRawEvents.value = combinedCached
+            val visibleCached = filterVisibleEvents(combinedCached, _hiddenEventIds.value, _hiddenCourseTitles.value)
 
-            if (combinedCached.isNotEmpty()) {
+            if (visibleCached.isNotEmpty()) {
                 _uiState.value = EdtUiState.Success(
-                    events = combinedCached,
+                    events = visibleCached,
+                    isRefreshing = true,
+                    lastSyncTimestamp = lastSync,
+                    refreshError = null
+                )
+            } else if (combinedCached.isNotEmpty()) {
+                _uiState.value = EdtUiState.Success(
+                    events = emptyList(),
                     isRefreshing = true,
                     lastSyncTimestamp = lastSync,
                     refreshError = null
@@ -274,9 +415,11 @@ class EdtViewModel(
                 saveLastSyncTimestamp(nowMs)
 
                 val allEvents = (remoteEvents + manualList).distinctBy { it.id }.sortedBy { it.startMs }
+                _allRawEvents.value = allEvents
+                val visibleEvents = filterVisibleEvents(allEvents, _hiddenEventIds.value, _hiddenCourseTitles.value)
 
                 _uiState.value = EdtUiState.Success(
-                    events = allEvents,
+                    events = visibleEvents,
                     isRefreshing = false,
                     lastSyncTimestamp = nowMs,
                     refreshError = null
@@ -285,7 +428,7 @@ class EdtViewModel(
                 val errorMsg = e.message ?: "Erreur inconnue"
                 if (combinedCached.isNotEmpty()) {
                     _uiState.value = EdtUiState.Success(
-                        events = combinedCached,
+                        events = filterVisibleEvents(combinedCached, _hiddenEventIds.value, _hiddenCourseTitles.value),
                         isRefreshing = false,
                         lastSyncTimestamp = lastSync,
                         refreshError = errorMsg
@@ -303,5 +446,7 @@ class EdtViewModel(
         private const val KEY_EVENTS = "edt_cached_events"
         private const val KEY_LAST_SYNC = "edt_last_sync_timestamp"
         private const val KEY_MANUAL_EVENTS = "edt_manual_events"
+        private const val KEY_HIDDEN_EVENT_IDS = "edt_hidden_event_ids"
+        private const val KEY_HIDDEN_COURSE_TITLES = "edt_hidden_course_titles"
     }
 }

@@ -484,4 +484,166 @@ class EdtViewModelTest {
         assertEquals(1, state.events.size)
         assertEquals("Algorithmique", state.events.first().title)
     }
+
+    @Test
+    fun testHideEventInstance() = runTest {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Maths TD1", 1700005000000L, 1700008000000L, "Amphi A", "#FF0000")
+
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(e1, e2)
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addTimetable("EDT Test", "https://example.com/cal.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val initialState = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(2, initialState.events.size)
+
+        // Hide specific event e1
+        viewModel.hideEvent("e1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("e1" in viewModel.hiddenEventIds.value)
+        val stateAfterHide = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(1, stateAfterHide.events.size)
+        assertEquals("e2", stateAfterHide.events.first().id)
+
+        // Unhide event e1
+        viewModel.unhideEvent("e1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse("e1" in viewModel.hiddenEventIds.value)
+        val stateAfterUnhide = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(2, stateAfterUnhide.events.size)
+    }
+
+    @Test
+    fun testHideCourseTitleAndToggle() = runTest {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Maths TD1", 1700005000000L, 1700008000000L, "Amphi A", "#FF0000")
+        val e3 = EdtEvent("e3", "tt1", "Physique CM", 1700010000000L, 1700013600000L, "Amphi B", "#00FF00")
+
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(e1, e2, e3)
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addTimetable("EDT Test", "https://example.com/cal.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Hide course title "Maths CM" -> hides e1 ("Maths CM"), leaves e2 ("Maths TD1") and e3 ("Physique CM")
+        viewModel.hideCourseTitle("Maths CM")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("Maths CM" in viewModel.hiddenCourseTitles.value)
+        val stateAfterHide = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(2, stateAfterHide.events.size)
+        assertEquals(listOf("e2", "e3"), stateAfterHide.events.map { it.id })
+
+        // Toggle course "Maths CM" -> unhides it
+        viewModel.toggleCourseTitleVisibility("Maths CM")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse("Maths CM" in viewModel.hiddenCourseTitles.value)
+        val stateAfterToggle = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(3, stateAfterToggle.events.size)
+    }
+
+    @Test
+    fun testUnhideCourseTitleClearsIndividualHiddenEventsForThatCourse() = runTest {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Maths TD1", 1700005000000L, 1700008000000L, "Amphi A", "#FF0000")
+
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(e1, e2)
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addTimetable("EDT Test", "https://example.com/cal.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Hide e1 individually, and hide course "Maths CM"
+        viewModel.hideEvent("e1")
+        viewModel.hideCourseTitle("Maths CM")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("e1" in viewModel.hiddenEventIds.value)
+        assertTrue("Maths CM" in viewModel.hiddenCourseTitles.value)
+
+        // Unhide course "Maths CM" -> should clear "Maths CM" from hidden titles AND e1 from hiddenEventIds
+        viewModel.unhideCourseTitle("Maths CM")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse("Maths CM" in viewModel.hiddenCourseTitles.value)
+        assertFalse("e1" in viewModel.hiddenEventIds.value)
+
+        val state = viewModel.uiState.value as EdtUiState.Success
+        assertEquals(2, state.events.size)
+    }
+
+    @Test
+    fun testUnhideAllHiddenClearsAllHiddenCourseTitlesAndEventIds() = runTest {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000")
+        val e2 = EdtEvent("e2", "tt1", "Physique TD1", 1700005000000L, 1700008000000L, "Amphi B", "#00FF00")
+
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(e1, e2)
+            }
+        }
+
+        val viewModel = EdtViewModel(repository = fakeRepo)
+        viewModel.addTimetable("EDT Test", "https://example.com/cal.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.hideCourseTitle("Maths CM")
+        viewModel.hideEvent("e2")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, (viewModel.uiState.value as EdtUiState.Success).events.size)
+
+        // Call unhideAllHidden()
+        viewModel.unhideAllHidden()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.hiddenCourseTitles.value.isEmpty())
+        assertTrue(viewModel.hiddenEventIds.value.isEmpty())
+        assertEquals(2, (viewModel.uiState.value as EdtUiState.Success).events.size)
+    }
+
+    @Test
+    fun testHiddenCourseSettingsPersistence() = runTest {
+        val e1 = EdtEvent("e1", "tt1", "Maths CM", 1700000000000L, 1700003600000L, "Amphi A", "#FF0000")
+        val fakeRepo = object : EdtRepository() {
+            override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
+                return listOf(e1)
+            }
+        }
+
+        val viewModel1 = EdtViewModel(repository = fakeRepo)
+        viewModel1.addTimetable("EDT Persistant", "https://example.com/p.ics")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel1.hideCourseTitle("Maths CM")
+        viewModel1.hideEvent("e2")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create new ViewModel instance to test cache restoration
+        val viewModel2 = EdtViewModel(repository = fakeRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("Maths CM" in viewModel2.hiddenCourseTitles.value)
+        assertTrue("e2" in viewModel2.hiddenEventIds.value)
+
+        val state = viewModel2.uiState.value as EdtUiState.Success
+        assertEquals(0, state.events.size)
+    }
 }
