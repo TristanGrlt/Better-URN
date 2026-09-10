@@ -177,6 +177,26 @@ class EdtUtilsTest {
     }
 
     @Test
+    fun testCalculateWeekPageStart() {
+        val initialMonday = LocalDate(2026, 9, 14)
+
+        // Initial page (page = initialPage, offset 0)
+        assertEquals(initialMonday, calculateWeekPageStart(initialMonday, 1000, 1000))
+
+        // Next week (page = 1001, offset +1 week)
+        val nextMonday = LocalDate(2026, 9, 21)
+        assertEquals(nextMonday, calculateWeekPageStart(initialMonday, 1001, 1000))
+
+        // Previous week (page = 999, offset -1 week)
+        val prevMonday = LocalDate(2026, 9, 7)
+        assertEquals(prevMonday, calculateWeekPageStart(initialMonday, 999, 1000))
+
+        // Cross month boundary (+3 weeks -> Oct 5)
+        val octMonday = LocalDate(2026, 10, 5)
+        assertEquals(octMonday, calculateWeekPageStart(initialMonday, 1003, 1000))
+    }
+
+    @Test
     fun testFormatWeekRange() {
         val sameMonth = LocalDate(2026, 9, 14)
         assertEquals("Semaine du 14 au 20 Septembre", formatWeekRange(sameMonth))

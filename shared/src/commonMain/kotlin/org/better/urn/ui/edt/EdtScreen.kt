@@ -55,11 +55,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.better.urn.data.AgendaDayItem
 import org.better.urn.data.EdtEvent
+import org.better.urn.data.calculateWeekPageStart
 import org.better.urn.data.filterAgendaEvents
 import org.better.urn.data.formatWeekRange
 import org.better.urn.data.getMondayOfWeek
@@ -349,9 +349,8 @@ fun EdtScreen(
 
                             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                                 val isDesktop = maxWidth >= 600.dp
-                                val currentWeekOffset = pagerState.currentPage - initialPage
-                                val currentWeekStart = remember(initialWeekStart, currentWeekOffset) {
-                                    LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + currentWeekOffset * 7)
+                                val currentWeekStart = remember(initialWeekStart, pagerState.currentPage) {
+                                    calculateWeekPageStart(initialWeekStart, pagerState.currentPage, initialPage)
                                 }
 
                                 Column(modifier = Modifier.fillMaxSize()) {

@@ -3,7 +3,6 @@ package org.better.urn.ui.edt.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -39,13 +37,16 @@ import kotlinx.datetime.toLocalDateTime
 import org.better.urn.data.EdtEvent
 import org.better.urn.data.EventPosition
 import org.better.urn.data.calculateEventPositions
+import org.better.urn.data.calculateWeekPageStart
 import org.better.urn.data.formatShortDayName
 import org.better.urn.data.getMondayOfWeek
 import org.better.urn.data.toEndOfDayEpochMs
 import org.better.urn.data.toStartOfDayEpochMs
 
 /**
- * Renders the interactive weekly timetable grid with off-screen prefetching and a static time axis.
+ * Renders the interactive weekly timetable grid with off-screen prefetching.
+ * The day header row is integrated into each week page of a single [HorizontalPager] and
+ * scrolls vertically alongside the grid lines and time axis.
  */
 @Composable
 fun EdtWeekView(
@@ -72,49 +73,23 @@ fun EdtWeekView(
 
     val totalHours = endHour - startHour
     val gridHeight = hourHeight * totalHours
+    val headerHeight = 52.dp
 
-    Column(modifier = modifier.fillMaxSize()) {
-        // Sticky Day Headers: Top row with static corner spacer and day names pager
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Row(
+    val scrollState = rememberScrollState()
+
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+    ) {
+        // Static Time Axis Column on the left (scrolls vertically with grid)
+        Column(modifier = Modifier.width(timeAxisWidth)) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Spacer(modifier = Modifier.width(timeAxisWidth))
-
-                HorizontalPager(
-                    state = pagerState,
-                    beyondViewportPageCount = 1,
-                    modifier = Modifier.weight(1f)
-                ) { page ->
-                    val weekOffset = page - initialPage
-                    val pageWeekStart = remember(initialWeekStart, weekOffset) {
-                        LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
-                    }
-
-                    WeekHeaderRow(
-                        weekStart = pageWeekStart,
-                        numDays = numDays,
-                        today = today
-                    )
-                }
-            }
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        val scrollState = rememberScrollState()
-
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            // Static Time Axis Column on the left (remains static during horizontal week swipes)
+                    .height(headerHeight)
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             StaticTimeAxisColumn(
                 startHour = startHour,
                 endHour = endHour,
@@ -122,19 +97,27 @@ fun EdtWeekView(
                 timeAxisWidth = timeAxisWidth,
                 gridHeight = gridHeight
             )
+        }
 
-            // Main Week Pager containing day columns and event cards
-            HorizontalPager(
-                state = pagerState,
-                beyondViewportPageCount = 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(gridHeight)
-            ) { page ->
-                val weekOffset = page - initialPage
-                val pageWeekStart = remember(initialWeekStart, weekOffset) {
-                    LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
-                }
+        // Single week pager containing day headers and event grid
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 1,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            val pageWeekStart = remember(initialWeekStart, page, initialPage) {
+                calculateWeekPageStart(initialWeekStart, page, initialPage)
+            }
+
+            Column(modifier = Modifier.fillMaxWidth()) {
+                WeekHeaderRow(
+                    weekStart = pageWeekStart,
+                    numDays = numDays,
+                    today = today,
+                    modifier = Modifier.height(headerHeight)
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 WeekGridPage(
                     events = events,
@@ -224,9 +207,13 @@ private fun StaticTimeAxisColumn(
 private fun WeekHeaderRow(
     weekStart: LocalDate,
     numDays: Int,
-    today: LocalDate
+    today: LocalDate,
+    modifier: Modifier = Modifier
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         for (d in 0 until numDays) {
             val date = remember(weekStart, d) {
                 LocalDate.fromEpochDays(weekStart.toEpochDays() + d)

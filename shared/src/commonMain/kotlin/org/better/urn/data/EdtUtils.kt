@@ -375,6 +375,18 @@ fun getMondayOfWeek(date: LocalDate): LocalDate {
 }
 
 /**
+ * Calculates the Monday [LocalDate] of a week page based on [initialWeekStart] and pager [page] index.
+ */
+fun calculateWeekPageStart(
+    initialWeekStart: LocalDate,
+    page: Int,
+    initialPage: Int = 1000
+): LocalDate {
+    val weekOffset = page - initialPage
+    return LocalDate.fromEpochDays(initialWeekStart.toEpochDays() + weekOffset * 7)
+}
+
+/**
  * Formats a week date range into a French localized header string (e.g., "Semaine du 14 au 20 Septembre").
  */
 fun formatWeekRange(weekStart: LocalDate): String {
