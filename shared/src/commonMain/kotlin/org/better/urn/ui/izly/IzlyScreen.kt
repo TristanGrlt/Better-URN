@@ -27,7 +27,9 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Devices
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Phone
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Sms
+import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
@@ -55,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import org.better.urn.getPlatform
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -323,6 +327,7 @@ private fun IzlyActivationContent(
     modifier: Modifier = Modifier,
 ) {
     val isLoading = uiState.authState is IzlyAuthState.Loading
+    var showManualInput by remember { mutableStateOf(uiState.activationLinkInput.isNotBlank()) }
 
     Box(
         modifier = modifier
@@ -370,11 +375,11 @@ private fun IzlyActivationContent(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Success confirmation message for SMS sent
+                // SMS Sent Notification
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp, bottom = 16.dp),
+                        .padding(top = 12.dp, bottom = 12.dp),
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -398,81 +403,246 @@ private fun IzlyActivationContent(
                     }
                 }
 
-                // Clever UX Desktop Note
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.Top
+                if (isLoading) {
+                    // Loading state when link is captured / submitted
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Devices,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier
-                                .size(22.dp)
-                                .padding(top = 2.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "Astuce pour ordinateur (Desktop)",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(36.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Vous pouvez vous transférer le lien SMS depuis votre téléphone via une messagerie synchronisée (WhatsApp Web, Telegram, Notes, e-mail...) pour le coller directement ci-dessous.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                text = "Activation de l'appareil en cours...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
-                }
-
-                OutlinedTextField(
-                    value = uiState.activationLinkInput,
-                    onValueChange = onActivationLinkChanged,
-                    label = { Text("Lien d'activation SMS") },
-                    placeholder = { Text("ex: https://mon-espace.izly.fr/tools/Activation/...") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Link,
-                            contentDescription = null
-                        )
-                    },
-                    trailingIcon = {
-                        if (uiState.activationLinkInput.isNotEmpty()) {
-                            IconButton(onClick = { onActivationLinkChanged("") }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Clear,
-                                    contentDescription = "Effacer"
+                } else if (remember { getPlatform().name.contains("Java") || getPlatform().name.contains("JVM") || getPlatform().name.contains("Desktop") }) {
+                    // Desktop view: Desktop tip + direct manual URL entry
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Devices,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .padding(top = 2.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Astuce pour ordinateur (Desktop)",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Transférez le lien SMS depuis votre téléphone via une messagerie (WhatsApp Web, Telegram, e-mail...) pour le coller ci-dessous.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
                         }
-                    },
-                    singleLine = false,
-                    maxLines = 3,
-                    enabled = !isLoading,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (!isLoading && uiState.activationLinkInput.isNotBlank()) {
-                                onSubmitActivationLink(uiState.activationLinkInput)
+                    }
+
+                    OutlinedTextField(
+                        value = uiState.activationLinkInput,
+                        onValueChange = onActivationLinkChanged,
+                        label = { Text("Lien d'activation SMS") },
+                        placeholder = { Text("ex: https://mon-espace.izly.fr/tools/Activation/...") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Link,
+                                contentDescription = null
+                            )
+                        },
+                        trailingIcon = {
+                            if (uiState.activationLinkInput.isNotEmpty()) {
+                                IconButton(onClick = { onActivationLinkChanged("") }) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Clear,
+                                        contentDescription = "Effacer"
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = false,
+                        maxLines = 3,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                if (uiState.activationLinkInput.isNotBlank()) {
+                                    onSubmitActivationLink(uiState.activationLinkInput)
+                                }
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { onSubmitActivationLink(uiState.activationLinkInput) },
+                        enabled = uiState.activationLinkInput.isNotBlank(),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "Valider le lien",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                } else {
+                    // Mobile view: Recommended deep link method + discrete manual entry toggle
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.TouchApp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Consultez vos SMS :",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Cliquez directement sur le lien reçu par SMS pour ouvrir l'application.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
                             }
                         }
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    }
+
+                    // Discrete toggle for manual link entry
+                    TextButton(
+                        onClick = { showManualInput = !showManualInput },
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (showManualInput) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (showManualInput) "Masquer la saisie manuelle" else "Saisir le lien manuellement",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = showManualInput,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.activationLinkInput,
+                                onValueChange = onActivationLinkChanged,
+                                label = { Text("Lien d'activation SMS") },
+                                placeholder = { Text("ex: https://mon-espace.izly.fr/tools/Activation/...") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Link,
+                                        contentDescription = null
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (uiState.activationLinkInput.isNotEmpty()) {
+                                        IconButton(onClick = { onActivationLinkChanged("") }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Clear,
+                                                contentDescription = "Effacer"
+                                            )
+                                        }
+                                    }
+                                },
+                                singleLine = false,
+                                maxLines = 3,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        if (uiState.activationLinkInput.isNotBlank()) {
+                                            onSubmitActivationLink(uiState.activationLinkInput)
+                                        }
+                                    }
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { onSubmitActivationLink(uiState.activationLinkInput) },
+                                enabled = uiState.activationLinkInput.isNotBlank(),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                            ) {
+                                Text(
+                                    text = "Valider le lien",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
 
                 AnimatedVisibility(visible = uiState.errorMessage != null) {
                     uiState.errorMessage?.let { error ->
@@ -503,32 +673,7 @@ private fun IzlyActivationContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { onSubmitActivationLink(uiState.activationLinkInput) },
-                    enabled = !isLoading && uiState.activationLinkInput.isNotBlank(),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.5.dp
-                        )
-                    } else {
-                        Text(
-                            text = "Valider l'appareil",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(
                     onClick = onBackToLogin,

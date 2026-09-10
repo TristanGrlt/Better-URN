@@ -155,13 +155,23 @@ class RealIzlyRepository(
         return runCatching {
             val cleanLink = smsLink.trim().substringBefore("?").trimEnd('/')
 
-            val realUrl = HttpClient {
-                followRedirects = false
-            }.use { client ->
-                client.get(cleanLink).headers[HttpHeaders.Location]
-            } ?: throw IllegalArgumentException("Lien expiré ou invalide.")
+            val realUrl: String = if (cleanLink.startsWith("izly:", ignoreCase = true)) {
+                cleanLink
+            } else if (cleanLink.startsWith("http://", ignoreCase = true) || cleanLink.startsWith("https://", ignoreCase = true)) {
+                val redirectedUrl = HttpClient {
+                    followRedirects = false
+                }.use { client ->
+                    client.get(cleanLink).headers[HttpHeaders.Location]
+                }
+                redirectedUrl ?: cleanLink
+            } else {
+                cleanLink
+            }
 
             val pathSegments = realUrl.trimEnd('/').split("/")
+            if (pathSegments.size < 2) {
+                throw IllegalArgumentException("Lien expiré ou invalide.")
+            }
             val activationCode = pathSegments.last()
             val phone = pathSegments[pathSegments.size - 2]
 

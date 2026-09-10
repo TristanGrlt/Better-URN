@@ -42,6 +42,7 @@ import org.better.urn.ui.edt.components.AddTimetableDialog
 import org.better.urn.ui.edt.components.AdeTutorialSheet
 import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.izly.IzlyScreen
+import org.better.urn.ui.izly.IzlyViewModel
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
 import org.better.urn.ui.settings.SettingsScreen
@@ -140,14 +141,8 @@ fun App(
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
             val universiticeViewModel: UniversiticeViewModel = viewModel { UniversiticeViewModel() }
+            val izlyViewModel: IzlyViewModel = viewModel { IzlyViewModel() }
             val state by universiticeViewModel.uiState.collectAsState()
-
-            LaunchedEffect(deepLink) {
-                if (!deepLink.isNullOrBlank()) {
-                    universiticeViewModel.handleAuthInput(deepLink)
-                    onDeepLinkHandled()
-                }
-            }
 
             val tabBackstack = rememberSaveable(
                 saver = listSaver(
@@ -164,6 +159,21 @@ fun App(
                 mutableStateListOf(settingsState.defaultTab)
             }
             val currentScreen = tabBackstack.lastOrNull() ?: AppScreen.UNIVERSITICE
+
+            LaunchedEffect(deepLink) {
+                if (!deepLink.isNullOrBlank()) {
+                    if (deepLink.startsWith("izly://", ignoreCase = true) || deepLink.contains("izly.fr", ignoreCase = true)) {
+                        if (tabBackstack.lastOrNull() != AppScreen.IZLY) {
+                            tabBackstack.remove(AppScreen.IZLY)
+                            tabBackstack.add(AppScreen.IZLY)
+                        }
+                        izlyViewModel.submitActivationLink(deepLink)
+                    } else {
+                        universiticeViewModel.handleAuthInput(deepLink)
+                    }
+                    onDeepLinkHandled()
+                }
+            }
 
             var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -247,6 +257,7 @@ fun App(
                         }
                         AppScreen.IZLY -> {
                             IzlyScreen(
+                                viewModel = izlyViewModel,
                                 onProfileClick = onNavigateToSettings
                             )
                         }
