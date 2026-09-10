@@ -41,6 +41,7 @@ import org.better.urn.ui.edt.EdtViewModel
 import org.better.urn.ui.edt.components.AddTimetableDialog
 import org.better.urn.ui.edt.components.AdeTutorialSheet
 import org.better.urn.ui.edt.components.EdtManagementSheet
+import org.better.urn.ui.izly.IzlyScreen
 import org.better.urn.ui.navigation.AppScreen
 import org.better.urn.ui.navigation.BackHandler
 import org.better.urn.ui.settings.SettingsScreen
@@ -245,13 +246,9 @@ fun App(
                             )
                         }
                         AppScreen.IZLY -> {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                BetterUrnTopBar(
-                                    title = "Izly",
-                                    onProfileClick = onNavigateToSettings
-                                )
-                                Text("Écran Izly en construction...", modifier = Modifier.padding(16.dp))
-                            }
+                            IzlyScreen(
+                                onProfileClick = onNavigateToSettings
+                            )
                         }
                         AppScreen.EDT -> {
                             EdtScreen(
