@@ -1,26 +1,32 @@
 package org.better.urn.ui.settings
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
 import org.better.urn.data.EdtViewMode
 import org.better.urn.data.EdtWeekDays
 import org.better.urn.data.UserPreferences
+import org.better.urn.data.izly.IzlyRepository
 import org.better.urn.ui.navigation.AppScreen
 
 /**
  * ViewModel managing presentation logic and user intent processing for the Settings screen.
  */
 class SettingsViewModel(
-    private val preferences: UserPreferences = UserPreferences()
+    private val preferences: UserPreferences = UserPreferences(),
+    private val izlyRepository: IzlyRepository = IzlyRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         SettingsUiState(
             currentUser = preferences.cachedUser,
+            isIzlyLoggedIn = false,
+            izlyPhone = izlyRepository.getSavedPhone(),
             moodleUrl = preferences.moodleUrl,
             theme = preferences.appTheme,
             defaultTab = preferences.defaultTab,
@@ -31,6 +37,10 @@ class SettingsViewModel(
         )
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    init {
+        refreshState()
+    }
 
     fun onThemeChanged(theme: AppTheme) {
         preferences.appTheme = theme
@@ -67,6 +77,16 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(currentUser = null)
     }
 
+    fun onIzlyLogoutClicked() {
+        viewModelScope.launch {
+            izlyRepository.logout()
+            _uiState.value = _uiState.value.copy(
+                isIzlyLoggedIn = false,
+                izlyPhone = null
+            )
+        }
+    }
+
     fun onToggleLegalDialog(isOpen: Boolean? = null) {
         val nextState = isOpen ?: !_uiState.value.isLegalDialogOpen
         _uiState.value = _uiState.value.copy(isLegalDialogOpen = nextState)
@@ -88,13 +108,19 @@ class SettingsViewModel(
     }
 
     fun refreshState() {
-        _uiState.value = _uiState.value.copy(
-            currentUser = preferences.cachedUser,
-            moodleUrl = preferences.moodleUrl,
-            theme = preferences.appTheme,
-            defaultTab = preferences.defaultTab,
-            edtDefaultView = preferences.edtDefaultView,
-            edtWeekDays = preferences.edtWeekDays
-        )
+        viewModelScope.launch {
+            val isIzlyValid = izlyRepository.hasValidSession()
+            val phone = izlyRepository.getSavedPhone()
+            _uiState.value = _uiState.value.copy(
+                currentUser = preferences.cachedUser,
+                isIzlyLoggedIn = isIzlyValid,
+                izlyPhone = phone,
+                moodleUrl = preferences.moodleUrl,
+                theme = preferences.appTheme,
+                defaultTab = preferences.defaultTab,
+                edtDefaultView = preferences.edtDefaultView,
+                edtWeekDays = preferences.edtWeekDays
+            )
+        }
     }
 }

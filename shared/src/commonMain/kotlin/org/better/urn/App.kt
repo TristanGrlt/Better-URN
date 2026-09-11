@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.better.urn.data.AppTheme
 import org.better.urn.data.ViewableFile
 import org.better.urn.data.ViewableFileType
+import org.better.urn.data.izly.IzlyAuthState
 import org.better.urn.ui.MainLayout
 import org.better.urn.ui.components.BetterUrnTopBar
 import org.better.urn.ui.components.ImageViewerOverlay
@@ -175,6 +176,12 @@ fun App(
                 }
             }
 
+            LaunchedEffect(currentScreen) {
+                if (currentScreen == AppScreen.IZLY && izlyViewModel.uiState.value.authState is IzlyAuthState.LoggedIn) {
+                    izlyViewModel.fetchHistory()
+                }
+            }
+
             var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
 
             LaunchedEffect(isSettingsOpen) {
@@ -300,6 +307,10 @@ fun App(
                                 settingsViewModel.onLogoutClicked()
                                 universiticeViewModel.logout()
                                 isSettingsOpen = false
+                            },
+                            onIzlyLogoutClicked = {
+                                settingsViewModel.onIzlyLogoutClicked()
+                                izlyViewModel.logout()
                             },
                             onToggleLegalDialog = settingsViewModel::onToggleLegalDialog,
                             onToggleLicenseDialog = settingsViewModel::onToggleLicenseDialog,

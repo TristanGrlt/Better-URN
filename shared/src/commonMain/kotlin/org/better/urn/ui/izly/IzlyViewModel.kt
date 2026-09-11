@@ -246,29 +246,47 @@ class IzlyViewModel(
 
     fun fetchHistory() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshingHistory = true) }
+            _uiState.update { it.copy(isRefreshingHistory = true, errorMessage = null) }
 
-            repository.getBalance().onSuccess { bal ->
-                _uiState.update { it.copy(balance = bal) }
+            val balanceResult = repository.getBalance()
+            val historyResult = repository.getHistory()
+
+            var newBalance = _uiState.value.balance
+            var balanceError: String? = null
+
+            balanceResult
+                .onSuccess { bal -> newBalance = bal }
+                .onFailure { err -> balanceError = err.message }
+
+            var newOperations = _uiState.value.operations
+            var historyError: String? = null
+
+            historyResult
+                .onSuccess { list -> newOperations = list }
+                .onFailure { err -> historyError = err.message }
+
+            val combinedError = balanceError ?: historyError
+
+            val isSessionExpired = combinedError?.let { msg ->
+                msg.contains("Non autorisé", ignoreCase = true) ||
+                msg.contains("session", ignoreCase = true) ||
+                msg.contains("expir", ignoreCase = true) ||
+                msg.contains("token", ignoreCase = true) ||
+                msg.contains("invalide", ignoreCase = true)
+            } == true
+
+            if (isSessionExpired) {
+                logout()
+            } else {
+                _uiState.update { state ->
+                    state.copy(
+                        balance = newBalance,
+                        operations = newOperations,
+                        isRefreshingHistory = false,
+                        errorMessage = combinedError
+                    )
+                }
             }
-
-            repository.getHistory()
-                .onSuccess { list ->
-                    _uiState.update { state ->
-                        state.copy(
-                            operations = list,
-                            isRefreshingHistory = false,
-                        )
-                    }
-                }
-                .onFailure { throwable ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isRefreshingHistory = false,
-                            errorMessage = throwable.message ?: "Impossible de charger l'historique",
-                        )
-                    }
-                }
         }
     }
 

@@ -1,11 +1,19 @@
 package org.better.urn.ui.settings
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.better.urn.data.AppTheme
 import org.better.urn.data.CacheStorage
 import org.better.urn.data.EdtViewMode
 import org.better.urn.data.EdtWeekDays
 import org.better.urn.data.MoodleUser
 import org.better.urn.data.UserPreferences
+import org.better.urn.data.izly.IzlyOperation
+import org.better.urn.data.izly.IzlyRepository
 import org.better.urn.ui.navigation.AppScreen
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -15,13 +23,42 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+private class FakeSettingsIzlyRepository(
+    var isSessionValid: Boolean = false,
+    var phone: String? = null
+) : IzlyRepository {
+    override suspend fun hasValidSession(): Boolean = isSessionValid
+    override suspend fun login(phone: String, pin: String): Result<Boolean> = Result.success(true)
+    override suspend fun tokenize(smsLink: String): Result<Unit> = Result.success(Unit)
+    override suspend fun getBalance(): Result<Float> = Result.success(0f)
+    override suspend fun getHistory(): Result<List<IzlyOperation>> = Result.success(emptyList())
+    override suspend fun logout() {
+        isSessionValid = false
+        phone = null
+    }
+    override fun getSavedPhone(): String? = phone
+    override fun savePhone(phone: String) { this.phone = phone }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
     private val preferences = UserPreferences()
+    private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+        cleanup()
+    }
+
     @AfterTest
-    fun cleanup() {
+    fun tearDown() {
+        cleanup()
+        Dispatchers.resetMain()
+    }
+
+    private fun cleanup() {
         preferences.logout()
         preferences.appTheme = AppTheme.SYSTEM
         preferences.defaultTab = AppScreen.UNIVERSITICE
@@ -32,7 +69,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testInitialStateReadsFromPreferences() {
+    fun testInitialStateReadsFromPreferencesAndIzly() = runTest {
         val user = MoodleUser(userid = 100, fullname = "Alice Dupont", userpictureurl = "https://example.com/pic.jpg")
         preferences.cachedUser = user
         preferences.moodleUrl = "https://custom.moodle.org"
@@ -41,10 +78,15 @@ class SettingsViewModelTest {
         preferences.edtDefaultView = EdtViewMode.SEMAINE
         preferences.edtWeekDays = EdtWeekDays.FIVE
 
-        val viewModel = SettingsViewModel(preferences)
+        val fakeIzlyRepo = FakeSettingsIzlyRepository(isSessionValid = true, phone = "0601020304")
+        val viewModel = SettingsViewModel(preferences, fakeIzlyRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
         val state = viewModel.uiState.value
 
         assertEquals(user, state.currentUser)
+        assertTrue(state.isIzlyLoggedIn)
+        assertEquals("0601020304", state.izlyPhone)
         assertEquals("https://custom.moodle.org", state.moodleUrl)
         assertEquals(AppTheme.DARK, state.theme)
         assertEquals(AppScreen.EDT, state.defaultTab)
@@ -55,8 +97,23 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun testOnIzlyLogoutClickedClearsIzlyState() = runTest {
+        val fakeIzlyRepo = FakeSettingsIzlyRepository(isSessionValid = true, phone = "0601020304")
+        val viewModel = SettingsViewModel(preferences, fakeIzlyRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isIzlyLoggedIn)
+
+        viewModel.onIzlyLogoutClicked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isIzlyLoggedIn)
+        assertNull(viewModel.uiState.value.izlyPhone)
+    }
+
+    @Test
     fun testOnThemeChangedUpdatesStateAndPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         viewModel.onThemeChanged(AppTheme.DARK)
         assertEquals(AppTheme.DARK, viewModel.uiState.value.theme)
@@ -73,7 +130,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnDefaultTabChangedUpdatesStateAndPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         viewModel.onDefaultTabChanged(AppScreen.EDT)
         assertEquals(AppScreen.EDT, viewModel.uiState.value.defaultTab)
@@ -94,7 +151,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnEdtDefaultViewChangedUpdatesStateAndPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         viewModel.onEdtDefaultViewChanged(EdtViewMode.SEMAINE)
         assertEquals(EdtViewMode.SEMAINE, viewModel.uiState.value.edtDefaultView)
@@ -107,7 +164,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnEdtWeekDaysChangedUpdatesStateAndPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         viewModel.onEdtWeekDaysChanged(EdtWeekDays.FIVE)
         assertEquals(EdtWeekDays.FIVE, viewModel.uiState.value.edtWeekDays)
@@ -124,7 +181,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnServerUrlChangedUpdatesStateAndPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         val newUrl = "https://moodle.univ-rouen.fr"
         viewModel.onServerUrlChanged(newUrl)
@@ -139,7 +196,7 @@ class SettingsViewModelTest {
         val user = MoodleUser(userid = 200, fullname = "Bob Martin", userpictureurl = "")
         preferences.cachedUser = user
 
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
         assertEquals(user, viewModel.uiState.value.currentUser)
 
         viewModel.onClearCacheClicked()
@@ -156,7 +213,7 @@ class SettingsViewModelTest {
         preferences.cachedUser = user
         CacheStorage.saveString("custom_cache_key", "cached_value")
 
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
         assertEquals(user, viewModel.uiState.value.currentUser)
 
         viewModel.onLogoutClicked()
@@ -169,7 +226,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnToggleLegalDialogTogglesAndExplicitlySetsState() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         assertFalse(viewModel.uiState.value.isLegalDialogOpen)
 
@@ -188,7 +245,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnToggleLicenseDialogTogglesAndExplicitlySetsState() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         assertFalse(viewModel.uiState.value.isLicenseDialogOpen)
 
@@ -207,7 +264,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnToggleServerDialogTogglesAndExplicitlySetsState() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         assertFalse(viewModel.uiState.value.isServerDialogOpen)
 
@@ -226,7 +283,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testOnToggleEdtManagerTogglesAndExplicitlySetsState() {
-        val viewModel = SettingsViewModel(preferences)
+        val viewModel = SettingsViewModel(preferences, FakeSettingsIzlyRepository())
 
         assertFalse(viewModel.uiState.value.isEdtManagerOpen)
 
@@ -244,8 +301,10 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testRefreshStateResyncsWithPreferences() {
-        val viewModel = SettingsViewModel(preferences)
+    fun testRefreshStateResyncsWithPreferencesAndIzly() = runTest {
+        val fakeIzlyRepo = FakeSettingsIzlyRepository(isSessionValid = false, phone = null)
+        val viewModel = SettingsViewModel(preferences, fakeIzlyRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         preferences.appTheme = AppTheme.DARK
         preferences.defaultTab = AppScreen.EDT
@@ -255,7 +314,11 @@ class SettingsViewModelTest {
         val user = MoodleUser(userid = 400, fullname = "David Guetta", userpictureurl = "")
         preferences.cachedUser = user
 
+        fakeIzlyRepo.isSessionValid = true
+        fakeIzlyRepo.phone = "0699887766"
+
         viewModel.refreshState()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertEquals(AppTheme.DARK, state.theme)
@@ -264,5 +327,7 @@ class SettingsViewModelTest {
         assertEquals(EdtWeekDays.SIX, state.edtWeekDays)
         assertEquals("https://updated.moodle.com", state.moodleUrl)
         assertEquals(user, state.currentUser)
+        assertTrue(state.isIzlyLoggedIn)
+        assertEquals("0699887766", state.izlyPhone)
     }
 }

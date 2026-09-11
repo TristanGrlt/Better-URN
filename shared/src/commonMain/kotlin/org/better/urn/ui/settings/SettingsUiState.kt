@@ -13,6 +13,8 @@ import org.better.urn.ui.navigation.AppScreen
 @Immutable
 data class SettingsUiState(
     val currentUser: MoodleUser? = null,
+    val isIzlyLoggedIn: Boolean = false,
+    val izlyPhone: String? = null,
     val moodleUrl: String = "https://universitice.univ-rouen.fr",
     val theme: AppTheme = AppTheme.SYSTEM,
     val defaultTab: AppScreen = AppScreen.UNIVERSITICE,

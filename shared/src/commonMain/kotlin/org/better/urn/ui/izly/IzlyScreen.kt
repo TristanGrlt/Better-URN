@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -102,7 +101,6 @@ fun IzlyScreen(
             IzlyLoggedInContent(
                 uiState = uiState,
                 onRefresh = { viewModel.fetchHistory() },
-                onLogout = { viewModel.logout() },
             )
         }
 
@@ -702,7 +700,6 @@ private fun IzlyActivationContent(
 private fun IzlyLoggedInContent(
     uiState: IzlyUiState,
     onRefresh: () -> Unit,
-    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -716,9 +713,48 @@ private fun IzlyLoggedInContent(
             IzlyBalanceCard(
                 balance = uiState.totalBalance,
                 isRefreshing = uiState.isRefreshingHistory,
-                onRefresh = onRefresh,
-                onLogout = onLogout
+                onRefresh = onRefresh
             )
+        }
+
+        if (uiState.errorMessage != null) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ErrorOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Erreur de chargement",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = uiState.errorMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(onClick = onRefresh) {
+                            Text("Réessayer", color = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                    }
+                }
+            }
         }
 
         item {
@@ -764,7 +800,6 @@ private fun IzlyBalanceCard(
     balance: Float,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -790,30 +825,20 @@ private fun IzlyBalanceCard(
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
 
-                Row {
-                    IconButton(
-                        onClick = onRefresh,
-                        enabled = !isRefreshing
-                    ) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.Refresh,
-                                contentDescription = "Rafraîchir l'historique",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-
-                    IconButton(onClick = onLogout) {
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = !isRefreshing
+                ) {
+                    if (isRefreshing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Logout,
-                            contentDescription = "Se déconnecter",
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = "Rafraîchir l'historique",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }

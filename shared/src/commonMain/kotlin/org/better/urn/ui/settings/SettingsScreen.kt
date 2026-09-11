@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Tab
 import androidx.compose.material.icons.rounded.Tune
@@ -78,6 +79,7 @@ fun SettingsScreen(
     onServerUrlChanged: (String) -> Unit,
     onClearCacheClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
+    onIzlyLogoutClicked: () -> Unit = {},
     onToggleLegalDialog: (Boolean?) -> Unit,
     modifier: Modifier = Modifier,
     onToggleLicenseDialog: ((Boolean?) -> Unit)? = null,
@@ -121,9 +123,10 @@ fun SettingsScreen(
                 contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section: Compte
+                // Section: Comptes
                 item {
-                    SettingsCardGroup(title = "Compte") {
+                    SettingsCardGroup(title = "Comptes") {
+                        // --- Account 1: Moodle / Universitice ---
                         ListItem(
                             headlineContent = {
                                 Text(
@@ -163,7 +166,7 @@ fun SettingsScreen(
                             ListItem(
                                 headlineContent = {
                                     Text(
-                                        text = "Se déconnecter",
+                                        text = "Se déconnecter de Universitice",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.error,
                                         fontWeight = FontWeight.Medium
@@ -189,6 +192,77 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable(onClick = onLogoutClicked)
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                        // --- Account 2: Izly ---
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = if (state.isIzlyLoggedIn && !state.izlyPhone.isNullOrBlank()) "Izly (${state.izlyPhone})" else "Izly",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = if (state.isIzlyLoggedIn) "Compte Izly actif" else "Non connecté • Connectez-vous via l'onglet Izly",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.AccountBalanceWallet,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+
+                        if (state.isIzlyLoggedIn) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        text = "Se déconnecter d'Izly",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                leadingContent = {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.errorContainer,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.Logout,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(onClick = onIzlyLogoutClicked)
                             )
                         }
                     }
