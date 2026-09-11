@@ -15,7 +15,7 @@ class EdtManagementSheetTest {
             EdtEvent("1", "tt1", "Maths CM", 0L, 1000L, "", "#FFFFFF"),
             EdtEvent("2", "tt1", "Maths CM", 1000L, 2000L, "", "#FFFFFF"),
             EdtEvent("3", "tt1", "Physique TD", 2000L, 3000L, "", "#FFFFFF"),
-            EdtEvent("4", "tt2", "Anglais", 3000L, 4000L, "", "#FFFFFF")
+            EdtEvent("4", "tt2", "Anglais", 3000L, 4000L, "", "#FFFFFF"),
         )
 
         val tt1Courses = extractUniqueCourseTitles(events, "tt1")

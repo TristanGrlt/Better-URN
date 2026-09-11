@@ -49,22 +49,22 @@ fun M3DownloadNotificationBanner(
     onOpenClick: () -> Unit,
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onRetryClick: (() -> Unit)? = null
+    onRetryClick: (() -> Unit)? = null,
 ) {
-    val isVisible = downloadState != null &&
+    val isVisible = (downloadState != null) &&
             (downloadState.status == DownloadStatus.COMPLETED || downloadState.status == DownloadStatus.FAILED)
 
     LaunchedEffect(downloadState?.id, downloadState?.status) {
         if (isVisible) {
-            delay(4000)
+            delay(kotlin.time.Duration.parse("4s"))
             onDismissClick()
         }
     }
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
         modifier = modifier
     ) {
         if (downloadState == null) return@AnimatedVisibility
@@ -136,15 +136,17 @@ fun M3DownloadNotificationBanner(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                } else if (onRetryClick != null) {
-                    TextButton(onClick = onRetryClick) {
-                        Icon(
-                            imageVector = Icons.Rounded.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Réessayer")
+                } else {
+                    onRetryClick?.let { retry ->
+                        TextButton(onClick = retry) {
+                            Icon(
+                                imageVector = Icons.Rounded.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Réessayer")
+                        }
                     }
                 }
 

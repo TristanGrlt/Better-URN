@@ -19,5 +19,5 @@ data class DownloadState(
     val downloadedBytes: Long = 0L,
     val totalBytes: Long = 0L,
     val filePath: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 )

@@ -21,7 +21,7 @@ class FileViewerViewModelTest {
             id = "1",
             title = "Test Image",
             url = "https://example.com/test.png",
-            fileType = ViewableFileType.IMAGE
+            fileType = ViewableFileType.IMAGE,
         )
 
         assertNull(viewModel.uiState.value.activeFileViewer)

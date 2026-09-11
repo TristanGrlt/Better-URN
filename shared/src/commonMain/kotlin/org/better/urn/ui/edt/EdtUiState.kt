@@ -8,7 +8,7 @@ sealed interface EdtUiState {
         val events: List<EdtEvent>,
         val isRefreshing: Boolean = false,
         val lastSyncTimestamp: Long? = null,
-        val refreshError: String? = null
+        val refreshError: String? = null,
     ) : EdtUiState
     data class Error(val message: String) : EdtUiState
 }

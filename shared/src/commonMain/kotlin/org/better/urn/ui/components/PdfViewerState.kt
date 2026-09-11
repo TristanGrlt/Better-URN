@@ -26,7 +26,7 @@ class PdfViewerState(
     initialPage: Int = 1,
     initialZoom: Float = 1f,
     initialRotation: Float = 0f,
-    initialFitMode: PdfFitMode = PdfFitMode.FIT_PAGE
+    initialFitMode: PdfFitMode = PdfFitMode.FIT_PAGE,
 ) {
     var currentPage by mutableIntStateOf(initialPage.coerceAtLeast(1))
         private set
@@ -36,20 +36,20 @@ class PdfViewerState(
     var zoom by mutableFloatStateOf(initialZoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
         private set
 
-    var rotationAngle by mutableFloatStateOf((initialRotation % 360f + 360f) % 360f)
+    var rotationAngle by mutableFloatStateOf(((initialRotation % 360f) + 360f) % 360f)
         private set
 
     var fitMode by mutableStateOf(initialFitMode)
         private set
 
-    var isGridVisible by mutableStateOf(false)
+    var isGridVisible by mutableStateOf(value = false)
 
     /**
      * Updates the document's total page count and clamps current page if necessary.
      */
     fun updatePageCount(count: Int) {
         pageCount = count.coerceAtLeast(0)
-        if (currentPage > pageCount && pageCount > 0) {
+        if ((currentPage > pageCount) && (pageCount > 0)) {
             currentPage = pageCount
         }
     }

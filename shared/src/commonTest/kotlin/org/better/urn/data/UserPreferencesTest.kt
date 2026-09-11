@@ -90,7 +90,7 @@ class UserPreferencesTest {
         val user = MoodleUser(
             userid = 42,
             fullname = "John Doe",
-            userpictureurl = "https://example.com/avatar.jpg"
+            userpictureurl = "https://example.com/avatar.jpg",
         )
         preferences.cachedUser = user
 

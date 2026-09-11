@@ -16,7 +16,7 @@ object MoodleAuthParser {
         val decodedString: String = try {
             val decodedBytes = Base64.decode(normalizedInput)
             val decodedStr = decodedBytes.decodeToString()
-            val hasNonPrintable = decodedStr.any { ch -> ch.code < 32 || ch.code > 126 }
+            val hasNonPrintable = decodedStr.any { ch -> ch.code !in 32..126 }
             if (hasNonPrintable && !decodedStr.contains(":::")) {
                 normalizedInput
             } else {
@@ -50,7 +50,7 @@ object MoodleAuthParser {
             if (!extractedToken.isNullOrBlank()) {
                 return MoodleAuthPayload(
                     token = extractedToken,
-                    passport = extractedPassport
+                    passport = extractedPassport,
                 )
             }
         }
@@ -67,7 +67,7 @@ object MoodleAuthParser {
                     token = token,
                     privateToken = privateToken,
                     passport = passport,
-                    urlHash = urlHash
+                    urlHash = urlHash,
                 )
             }
         }

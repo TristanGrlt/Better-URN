@@ -226,7 +226,7 @@ class IzlyViewModel(
                         }
                     }
             } finally {
-                delay(2000L)
+                delay(kotlin.time.Duration.parse("2s"))
                 isTokenizing = false
             }
         }

@@ -75,14 +75,14 @@ fun VideoPlayerOverlay(
     file: ViewableFile,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    onDownloadFile: ((ViewableFile) -> Unit)? = null
+    onDownloadFile: ((ViewableFile) -> Unit)? = null,
 ) {
     BackHandler(enabled = true) {
         onClose()
     }
 
     val uriHandler = LocalUriHandler.current
-    var isPlaying by rememberSaveable(inputs = arrayOf(file.id)) { mutableStateOf(true) }
+    var isPlaying by rememberSaveable(inputs = arrayOf(file.id)) { mutableStateOf(value = true) }
     var currentPosMs by rememberSaveable(inputs = arrayOf(file.id)) { mutableLongStateOf(0L) }
     var durationMs by rememberSaveable(inputs = arrayOf(file.id)) { mutableLongStateOf(0L) }
     var volume by rememberSaveable(inputs = arrayOf(file.id)) { mutableFloatStateOf(1f) }
@@ -114,7 +114,7 @@ fun VideoPlayerOverlay(
     // Auto-hide controls timer
     LaunchedEffect(controlsVisible, isPlaying) {
         if (controlsVisible && isPlaying) {
-            delay(3500)
+            delay(kotlin.time.Duration.parse("3500ms"))
             controlsVisible = false
         }
     }
@@ -125,7 +125,7 @@ fun VideoPlayerOverlay(
 
     val togglePlayPause = {
         resetAutoHide()
-        if (durationMs > 0 && currentPosMs >= durationMs - 500L) {
+        if ((durationMs > 0) && (currentPosMs >= durationMs - 500L)) {
             seekTargetMs = 0L
             isPlaying = true
         } else {

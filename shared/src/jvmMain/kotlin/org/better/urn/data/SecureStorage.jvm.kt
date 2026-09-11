@@ -66,7 +66,7 @@ actual object SecureStorage {
     private fun saveProperties(props: Properties) {
         try {
             val dir = storageFile.parentFile
-            if (dir != null && !dir.exists()) {
+            if ((dir != null) && (!dir.exists())) {
                 dir.mkdirs()
             }
             storageFile.outputStream().use { props.store(it, "Secure Storage") }

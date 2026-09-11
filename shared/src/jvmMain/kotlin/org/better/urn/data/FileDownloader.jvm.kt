@@ -34,7 +34,7 @@ class JvmFileDownloader : FileDownloader {
             id = downloadId,
             file = file,
             status = DownloadStatus.DOWNLOADING,
-            progress = 0f
+            progress = 0f,
         )
         emit(initial)
 
@@ -76,7 +76,7 @@ class JvmFileDownloader : FileDownloader {
             var downloadedBytes = 0L
             var lastEmittedProgress = 0f
 
-            while (!channel.isClosedForRead && activeJobs[downloadId] == true) {
+            while (!channel.isClosedForRead && (activeJobs[downloadId] == true)) {
                 val read = channel.readAvailable(buffer, 0, buffer.size)
                 if (read <= 0) break
 

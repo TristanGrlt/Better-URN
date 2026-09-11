@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
 
 private class FakeSettingsIzlyRepository(
     var isSessionValid: Boolean = false,
-    var phone: String? = null
+    var phone: String? = null,
 ) : IzlyRepository {
     override suspend fun hasValidSession(): Boolean = isSessionValid
     override suspend fun login(phone: String, pin: String): Result<Boolean> = Result.success(true)

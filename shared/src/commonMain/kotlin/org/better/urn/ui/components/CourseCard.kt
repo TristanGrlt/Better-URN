@@ -48,8 +48,8 @@ fun CourseCard(
             if (file.exists()) file else null
         }
     }
-    var showMenu by remember { mutableStateOf(false) }
-    val hasContextMenu = onToggleHide != null || onOpenInBrowser != null
+    var showMenu by remember { mutableStateOf(value = false) }
+    val hasContextMenu = (onToggleHide != null) || (onOpenInBrowser != null)
 
     val isDark = isSystemInDarkTheme()
 

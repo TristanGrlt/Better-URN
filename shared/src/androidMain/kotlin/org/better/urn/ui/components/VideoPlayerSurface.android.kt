@@ -27,11 +27,11 @@ actual fun VideoPlayerSurface(
     onBufferingStateChanged: (isBuffering: Boolean) -> Unit,
     onPlaybackEnded: () -> Unit,
     onError: (message: String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
-    var isPrepared by remember { mutableStateOf(false) }
+    var isPrepared by remember { mutableStateOf(value = false) }
 
     AndroidView(
         factory = { context ->
@@ -90,7 +90,7 @@ actual fun VideoPlayerSurface(
                 }
             }
         },
-        update = { videoView ->
+        update = { _ ->
             if (isPrepared) {
                 mediaPlayerRef?.let { mp ->
                     try {
@@ -110,7 +110,7 @@ actual fun VideoPlayerSurface(
 
     LaunchedEffect(isPlaying, isPrepared) {
         val vView = videoViewRef
-        if (vView != null && isPrepared) {
+        if ((vView != null) && isPrepared) {
             if (isPlaying) {
                 if (!vView.isPlaying) {
                     vView.start()
@@ -124,10 +124,9 @@ actual fun VideoPlayerSurface(
     }
 
     LaunchedEffect(seekToMs, isPrepared) {
-        val targetMs = seekToMs
         val vView = videoViewRef
-        if (targetMs != null && vView != null && isPrepared) {
-            vView.seekTo(targetMs.toInt())
+        if (seekToMs != null && (vView != null) && isPrepared) {
+            vView.seekTo(seekToMs.toInt())
             onSeekCompleted()
         }
     }
@@ -141,7 +140,7 @@ actual fun VideoPlayerSurface(
                     val dur = vView.duration.toLong().coerceAtLeast(0L)
                     onProgressUpdate(pos, dur)
                 }
-                delay(250)
+                delay(kotlin.time.Duration.parse("250ms"))
             }
         }
     }

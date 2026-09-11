@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class MoodleUser(
     val userid: Int,
     val fullname: String,
-    val userpictureurl: String
+    val userpictureurl: String,
 )
 
 @Immutable
@@ -20,15 +20,15 @@ data class Course(
     val shortname: String,
     val overviewfiles: List<MoodleFile> = emptyList(),
     val imageUrl: String? = null,
-    @SerialName("hidden") val isHidden: Boolean = false
+    @SerialName("hidden") val isHidden: Boolean = false,
 ) {
     fun sanitized(): Course = copy(
         fullname = fullname.cleanHtml(),
-        shortname = shortname.cleanHtml()
+        shortname = shortname.cleanHtml(),
     )
 
     fun getImageUrl(token: String): String? {
-        if (imageUrl != null) return imageUrl
+        imageUrl?.let { return it }
         val fileUrl = overviewfiles.firstOrNull()?.fileurl ?: return null
         if (token.isBlank()) return fileUrl
         return "$fileUrl?token=$token"
@@ -36,7 +36,7 @@ data class Course(
 
     fun withResolvedImageUrl(token: String): Course {
         val currentImg = imageUrl
-        if (currentImg != null && !currentImg.startsWith("http://") && !currentImg.startsWith("https://")) {
+        if (currentImg != null && (!currentImg.startsWith("http://")) && (!currentImg.startsWith("https://"))) {
             val cleanPath = currentImg.removePrefix("file:")
             if (java.io.File(cleanPath).exists()) {
                 return copy(imageUrl = cleanPath)

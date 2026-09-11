@@ -84,7 +84,7 @@ private val LightColors = lightColorScheme(
     surfaceContainerLow = Color(0xFFF1F3FA),
     surfaceContainer = Color(0xFFEBEFF7),
     surfaceContainerHigh = Color(0xFFE2E7F0),
-    surfaceContainerHighest = Color(0xFFDAE0EA)
+    surfaceContainerHighest = Color(0xFFDAE0EA),
 )
 
 private val DarkColors = darkColorScheme(
@@ -120,7 +120,7 @@ private val DarkColors = darkColorScheme(
     surfaceContainerLow = Color(0xFF191C21),
     surfaceContainer = Color(0xFF1F2228),
     surfaceContainerHigh = Color(0xFF292C33),
-    surfaceContainerHighest = Color(0xFF343740)
+    surfaceContainerHighest = Color(0xFF343740),
 )
 
 @Composable
@@ -150,9 +150,10 @@ fun App(
                     save = { it.map { screen -> screen.name } },
                     restore = { savedNames ->
                         mutableStateListOf<AppScreen>().apply {
-                            addAll(savedNames.mapNotNull { name ->
+                            val items = savedNames.mapNotNull { name ->
                                 runCatching { AppScreen.valueOf(name) }.getOrNull()
-                            })
+                            }
+                            addAll(items)
                         }
                     }
                 )
@@ -177,12 +178,12 @@ fun App(
             }
 
             LaunchedEffect(currentScreen) {
-                if (currentScreen == AppScreen.IZLY && izlyViewModel.uiState.value.authState is IzlyAuthState.LoggedIn) {
+                if ((currentScreen == AppScreen.IZLY) && izlyViewModel.uiState.value.authState is IzlyAuthState.LoggedIn) {
                     izlyViewModel.fetchHistory()
                 }
             }
 
-            var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
+            var isSettingsOpen by rememberSaveable { mutableStateOf(value = false) }
 
             LaunchedEffect(isSettingsOpen) {
                 if (isSettingsOpen) {
@@ -331,7 +332,7 @@ fun App(
                     val hiddenEventIds by edtViewModel.hiddenEventIds.collectAsState()
                     val successState = edtUiState as? EdtUiState.Success
 
-                    var showAddDialogInSettings by remember { mutableStateOf(false) }
+                    var showAddDialogInSettings by remember { mutableStateOf(value = false) }
                     var showQrScannerInSettings by remember { mutableStateOf(false) }
                     var showAdeTutorialInSettings by remember { mutableStateOf(false) }
 

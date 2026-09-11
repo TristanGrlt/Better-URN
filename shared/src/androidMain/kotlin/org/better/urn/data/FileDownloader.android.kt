@@ -17,7 +17,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -30,7 +29,7 @@ private const val CHANNEL_ID = "better_urn_file_downloads"
 private const val CHANNEL_NAME = "Téléchargements"
 
 class AndroidFileDownloader(
-    private val getContext: () -> Context? = { AndroidContextProvider.context }
+    private val getContext: () -> Context? = { AndroidContextProvider.context },
 ) : FileDownloader {
 
     private val httpClient by lazy {
@@ -66,8 +65,8 @@ class AndroidFileDownloader(
 
         val context = getContext()
         val notificationManager = context?.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        if (notificationManager != null) {
-            ensureNotificationChannel(notificationManager)
+        notificationManager?.let {
+            ensureNotificationChannel(it)
         }
 
         val notificationId = downloadId.hashCode()
@@ -113,7 +112,7 @@ class AndroidFileDownloader(
             var downloadedBytes = 0L
             var lastEmittedProgress = 0f
 
-            while (!channel.isClosedForRead && activeJobs[downloadId] == true) {
+            while (!channel.isClosedForRead && (activeJobs[downloadId] == true)) {
                 val read = channel.readAvailable(buffer, 0, buffer.size)
                 if (read <= 0) break
 

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -70,14 +69,14 @@ import org.better.urn.getPlatform
 @Composable
 fun QrScannerSheet(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, url: String) -> Unit
+    onConfirm: (name: String, url: String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isDesktop = remember { getPlatform().name.contains("Java") || getPlatform().name.contains("JVM") }
 
     var scannedResult by remember { mutableStateOf<QrScanResult.Success?>(null) }
     var calendarName by remember { mutableStateOf("") }
-    var isTorchEnabled by remember { mutableStateOf(false) }
+    var isTorchEnabled by remember { mutableStateOf(value = false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -131,7 +130,7 @@ fun QrScannerSheet(
                 }
 
                 Row {
-                    if (scannedResult == null && !isDesktop) {
+                    if ((scannedResult == null) && !isDesktop) {
                         IconButton(
                             onClick = { isTorchEnabled = !isTorchEnabled },
                             colors = IconButtonDefaults.iconButtonColors(

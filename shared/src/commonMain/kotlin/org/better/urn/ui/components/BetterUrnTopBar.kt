@@ -29,7 +29,7 @@ fun BetterUrnTopBar(
     isRefreshing: Boolean = false,
     refreshContentDescription: String = "Actualiser",
     onProfileClick: (() -> Unit)? = null,
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         title = {
@@ -61,8 +61,8 @@ fun BetterUrnTopBar(
             }
         },
         navigationIcon = {
-            if (onBackClick != null) {
-                IconButton(onClick = onBackClick) {
+            onBackClick?.let { onBack ->
+                IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Retour"

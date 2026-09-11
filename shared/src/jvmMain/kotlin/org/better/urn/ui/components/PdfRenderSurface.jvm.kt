@@ -30,7 +30,6 @@ import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.io.File
-import java.net.URL
 
 @Composable
 actual fun PdfRenderSurface(
@@ -38,7 +37,7 @@ actual fun PdfRenderSurface(
     state: PdfViewerState,
     onLoadingStateChanged: (Boolean) -> Unit,
     onError: (String?) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var panX by remember { mutableFloatStateOf(0f) }
     var panY by remember { mutableFloatStateOf(0f) }
@@ -67,7 +66,7 @@ actual fun PdfRenderSurface(
 
     // Scroll list when state.currentPage changes programmatically (prevents scroll feedback loop)
     LaunchedEffect(state.currentPage) {
-        if (state.pageCount > 0 && !lazyListState.isScrollInProgress) {
+        if ((state.pageCount > 0) && !lazyListState.isScrollInProgress) {
             val targetIndex = (state.currentPage - 1).coerceIn(0, state.pageCount - 1)
             if (lazyListState.firstVisibleItemIndex != targetIndex) {
                 lazyListState.animateScrollToItem(targetIndex)
@@ -89,7 +88,7 @@ actual fun PdfRenderSurface(
                 val safeFileName = url.hashCode().toString() + ".pdf"
                 val file = File(cacheDir, safeFileName)
                 if (!file.exists() || file.length() == 0L) {
-                    val connection = URL(url).openConnection()
+                    val connection = java.net.URI.create(url).toURL().openConnection()
                     connection.setRequestProperty("User-Agent", "Mozilla/5.0 (BetterURN)")
                     connection.connectTimeout = 15000
                     connection.readTimeout = 30000
@@ -231,9 +230,8 @@ actual fun PdfRenderSurface(
                             } else {
                                 val rendered = withContext(Dispatchers.Default) {
                                     rendererMutex.withLock {
-                                        val existing = lruCache[pageIndex]
-                                        if (existing != null) {
-                                            return@withLock existing
+                                        lruCache[pageIndex]?.let {
+                                            return@withLock it
                                         }
 
                                         val dpi = if (state.fitMode == PdfFitMode.FIT_WIDTH) 180f else 140f

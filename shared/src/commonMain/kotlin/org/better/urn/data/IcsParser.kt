@@ -7,10 +7,10 @@ import kotlinx.datetime.toInstant
 
 object IcsParser {
 
-    suspend fun parseIcs(
+    fun parseIcs(
         icsContent: String,
         timetableId: String,
-        isDarkTheme: Boolean
+        isDarkTheme: Boolean,
     ): List<EdtEvent> {
         if (icsContent.isBlank()) return emptyList()
 
@@ -77,7 +77,7 @@ object IcsParser {
                 }
             }
 
-            if (dtStartRaw != null && dtEndRaw != null) {
+            if ((dtStartRaw != null) && (dtEndRaw != null)) {
                 val title = summary ?: "Sans titre"
                 val loc = location ?: ""
                 val desc = description ?: ""
@@ -95,7 +95,7 @@ object IcsParser {
                         endMs = endMs,
                         location = loc,
                         colorHex = color,
-                        description = desc
+                        description = desc,
                     )
                 )
             }
@@ -120,7 +120,7 @@ object IcsParser {
 
         val isoStr = if (cleanStr.contains("-") || cleanStr.contains(":")) {
             cleanStr
-        } else if (cleanStr.length >= 15 && cleanStr[8] == 'T') {
+        } else if ((cleanStr.length >= 15) && (cleanStr[8] == 'T')) {
             val year = cleanStr.substring(0, 4)
             val month = cleanStr.substring(4, 6)
             val day = cleanStr.substring(6, 8)
@@ -150,7 +150,7 @@ object IcsParser {
                 }
                 ldt.toInstant(timeZone).toEpochMilliseconds()
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             0L
         }
     }

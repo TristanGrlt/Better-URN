@@ -29,7 +29,7 @@ import org.better.urn.data.toViewableFile
 
 class UniversiticeViewModel(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    private val downloader: FileDownloader = createPlatformFileDownloader()
+    private val downloader: FileDownloader = createPlatformFileDownloader(),
 ) : ViewModel() {
     private val preferences = UserPreferences()
     private val scope = CoroutineScope(mainDispatcher)
@@ -103,7 +103,7 @@ class UniversiticeViewModel(
         val payload = MoodleAuthParser.parse(normalized)
         val isValid = MoodleAuthValidator.validate(payload, storedPassport)
 
-        if (!isValid || payload == null) {
+        if (!isValid || (payload == null)) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = "Authentification échouée : jeton invalide ou échec de vérification de sécurité."
             )
@@ -459,7 +459,7 @@ class UniversiticeViewModel(
                     fetchedCourses.map { it.sanitized().withResolvedImageUrl(token) }
                 }
 
-                val serverHiddenIds = fetchedCourses.filter { it.isHidden }.map { it.id }.toSet()
+                val serverHiddenIds = fetchedCourses.asSequence().filter { it.isHidden }.map { it.id }.toSet()
                 val mergedHiddenIds = (preferences.getHiddenCourseIds() + serverHiddenIds).toSet()
                 preferences.setHiddenCourseIds(mergedHiddenIds)
 
@@ -488,9 +488,7 @@ class UniversiticeViewModel(
             } catch (e: MoodleTokenExpiredException) {
                 handleTokenExpiration(e.message)
             } catch (e: Exception) {
-                val displayCourses = if (_uiState.value.courses.isNotEmpty()) {
-                    _uiState.value.courses
-                } else {
+                val displayCourses = _uiState.value.courses.ifEmpty {
                     processedCachedCourses.toImmutableList()
                 }
                 val displayFiltered = withContext(Dispatchers.Default) {

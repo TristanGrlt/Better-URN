@@ -18,7 +18,7 @@ import org.better.urn.data.normalizeUrl
 
 class EdtViewModel(
     private val repository: EdtRepository = EdtRepository(),
-    private val isDarkTheme: Boolean = false
+    private val isDarkTheme: Boolean = false,
 ) : ViewModel() {
 
     private val json = Json {
@@ -301,7 +301,7 @@ class EdtViewModel(
         saveHiddenCourseTitles(updatedTitles)
 
         val rawList = _allRawEvents.value
-        val eventIdsToRemove = rawList.filter {
+        val eventIdsToRemove = rawList.asSequence().filter {
             it.title.trim() == title
         }.map { it.id }.toSet()
 
@@ -382,7 +382,7 @@ class EdtViewModel(
 
             val cached = loadCachedEvents()
             val visibleIds = visibleTimetables.map { it.id }.toSet()
-            val filteredCached = cached.filter { it.timetableId in visibleIds || it.timetableId == "default" || visibleIds.isEmpty() }
+            val filteredCached = cached.filter { (it.timetableId in visibleIds) || (it.timetableId == "default") || visibleIds.isEmpty() }
             val combinedCached = (filteredCached + manualList).distinctBy { it.id }.sortedBy { it.startMs }
             _allRawEvents.value = combinedCached
             val visibleCached = filterVisibleEvents(combinedCached, _hiddenEventIds.value, _hiddenCourseTitles.value)

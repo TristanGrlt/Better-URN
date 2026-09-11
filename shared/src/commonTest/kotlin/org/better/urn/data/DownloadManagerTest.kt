@@ -66,7 +66,7 @@ class DownloadManagerTest {
                     filename = "Exercices_Ch1.docx",
                     fileurl = "https://moodle.univ.fr/webservice/pluginfile.php/555/mod_resource/content/1/Exercices_Ch1.docx",
                     mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    filesize = 1048576
+                    filesize = 1048576,
                 )
             )
         )

@@ -80,7 +80,7 @@ actual object CacheStorage {
     actual fun getFilePath(key: String): String? {
         return try {
             val file = getFileForImageKey(key)
-            if (file.exists() && file.length() > 0) {
+            if ((file.exists()) && (file.length() > 0)) {
                 file.absolutePath
             } else {
                 null

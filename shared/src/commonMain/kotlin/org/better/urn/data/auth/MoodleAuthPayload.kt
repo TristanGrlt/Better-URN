@@ -7,5 +7,5 @@ data class MoodleAuthPayload(
     val token: String,
     val privateToken: String? = null,
     val passport: String? = null,
-    val urlHash: String? = null
+    val urlHash: String? = null,
 )

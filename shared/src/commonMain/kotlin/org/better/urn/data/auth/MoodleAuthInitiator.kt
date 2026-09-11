@@ -16,6 +16,7 @@ object MoodleAuthInitiator {
      */
     fun generatePassport(): String {
         return (1..PASSPORT_LENGTH)
+            .asSequence()
             .map { PASSPORT_CHARSET[Random.nextInt(PASSPORT_CHARSET.length)] }
             .joinToString("")
     }
@@ -27,7 +28,7 @@ object MoodleAuthInitiator {
         baseUrl: String,
         passport: String,
         service: String = DEFAULT_SERVICE,
-        urlScheme: String = DEFAULT_URL_SCHEME
+        urlScheme: String = DEFAULT_URL_SCHEME,
     ): String {
         val cleanBaseUrl = baseUrl.trim().removeSuffix("/")
         val launchEndpoint = "$cleanBaseUrl/admin/tool/mobile/launch.php"

@@ -29,7 +29,7 @@ class UniversiticeViewModelStateTest {
             id = "pdf_1",
             title = "Cours PDF",
             url = "https://example.com/doc.pdf",
-            fileType = ViewableFileType.PDF
+            fileType = ViewableFileType.PDF,
         )
         viewModel.openFileViewer(file)
         assertNotNull(viewModel.uiState.value.activeFileViewer)

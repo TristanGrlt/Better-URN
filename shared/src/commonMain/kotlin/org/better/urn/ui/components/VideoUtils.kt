@@ -25,7 +25,7 @@ object VideoUtils {
      */
     fun getNextPlaybackSpeed(currentSpeed: Float): Float {
         val currentIndex = SUPPORTED_PLAYBACK_SPEEDS.indexOfFirst { kotlin.math.abs(it - currentSpeed) < 0.05f }
-        return if (currentIndex == -1 || currentIndex == SUPPORTED_PLAYBACK_SPEEDS.lastIndex) {
+        return if ((currentIndex == -1) || (currentIndex == SUPPORTED_PLAYBACK_SPEEDS.lastIndex)) {
             SUPPORTED_PLAYBACK_SPEEDS.first()
         } else {
             SUPPORTED_PLAYBACK_SPEEDS[currentIndex + 1]

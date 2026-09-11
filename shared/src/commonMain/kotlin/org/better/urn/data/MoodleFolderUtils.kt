@@ -5,20 +5,20 @@ import androidx.compose.runtime.Immutable
 @Immutable
 data class BreadcrumbSegment(
     val name: String,
-    val path: String
+    val path: String,
 )
 
 @Immutable
 data class FolderSubfolderItem(
     val name: String,
     val fullPath: String,
-    val itemCount: Int
+    val itemCount: Int,
 )
 
 @Immutable
 data class FolderFileItem(
     val content: ModuleContent,
-    val viewableFile: ViewableFile
+    val viewableFile: ViewableFile,
 )
 
 @Immutable
@@ -26,7 +26,7 @@ data class FolderTreeContent(
     val currentPath: String,
     val breadcrumbs: List<BreadcrumbSegment>,
     val subfolders: List<FolderSubfolderItem>,
-    val files: List<FolderFileItem>
+    val files: List<FolderFileItem>,
 )
 
 object MoodleFolderUtils {
@@ -36,7 +36,7 @@ object MoodleFolderUtils {
      */
     fun normalizePath(path: String): String {
         val trimmed = path.trim()
-        if (trimmed.isEmpty() || trimmed == "/") return "/"
+        if (trimmed.isEmpty() || (trimmed == "/")) return "/"
         val withLeading = if (trimmed.startsWith("/")) trimmed else "/$trimmed"
         return if (withLeading.endsWith("/")) withLeading else "$withLeading/"
     }
@@ -79,10 +79,10 @@ object MoodleFolderUtils {
         content: ModuleContent,
         moduleId: Int,
         index: Int,
-        token: String
+        token: String,
     ): ViewableFile? {
         val rawUrl = content.fileurl ?: return null
-        if (content.filename.isNullOrBlank() || content.filename == ".") return null
+        if (content.filename.isNullOrBlank() || (content.filename == ".")) return null
 
         var targetUrl = rawUrl
         if (targetUrl.contains("/pluginfile.php/") && !targetUrl.contains("/webservice/pluginfile.php/")) {
@@ -147,8 +147,7 @@ object MoodleFolderUtils {
             val filePath = normalizePath(content.filepath ?: "/")
 
             if (filePath == normalizedCurrent) {
-                val viewable = createViewableFile(content, moduleId, index, token)
-                if (viewable != null) {
+                createViewableFile(content, moduleId, index, token)?.let { viewable ->
                     directFiles.add(FolderFileItem(content = content.sanitized(), viewableFile = viewable))
                 }
             } else if (filePath.startsWith(normalizedCurrent)) {
@@ -160,14 +159,14 @@ object MoodleFolderUtils {
             }
         }
 
-        val subfolderItems = subfolderItemMap.map { (subName, items) ->
+        val subfolderItems = subfolderItemMap.asSequence().map { (subName, items) ->
             val fullSubPath = "$normalizedCurrent$subName/"
             FolderSubfolderItem(
                 name = subName,
                 fullPath = fullSubPath,
                 itemCount = items.count { !it.filename.isNullOrBlank() && it.filename != "." }
             )
-        }.sortedBy { it.name.lowercase() }
+        }.sortedBy { it.name.lowercase() }.toList()
 
         val cleanQuery = searchQuery.trim().lowercase()
         val filteredFiles = if (cleanQuery.isBlank()) {

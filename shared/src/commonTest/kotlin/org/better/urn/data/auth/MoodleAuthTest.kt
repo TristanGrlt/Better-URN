@@ -149,7 +149,7 @@ class MoodleAuthTest {
         val passport = "12345678901234567890123456789012"
         val payload = MoodleAuthPayload(
             token = "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
-            passport = passport
+            passport = passport,
         )
 
         assertTrue(MoodleAuthValidator.validate(payload, passport))

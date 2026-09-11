@@ -77,7 +77,6 @@ import org.better.urn.ui.edt.components.EdtManagementSheet
 import org.better.urn.ui.edt.components.EdtWeekView
 import org.better.urn.ui.edt.components.ManualCourseDialog
 import org.better.urn.ui.edt.components.UpcomingTasksSheet
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.rememberModalBottomSheetState
 import org.better.urn.data.EdtViewMode
@@ -89,7 +88,7 @@ fun EdtScreen(
     onProfileClick: (() -> Unit)? = null,
     viewModel: EdtViewModel = viewModel { EdtViewModel() },
     initialViewMode: EdtViewMode = EdtViewMode.AGENDA,
-    weekDays: EdtWeekDays = EdtWeekDays.SEVEN
+    weekDays: EdtWeekDays = EdtWeekDays.SEVEN,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val timetables by viewModel.timetables.collectAsState()
@@ -98,7 +97,7 @@ fun EdtScreen(
     val hiddenCourseTitles by viewModel.hiddenCourseTitles.collectAsState()
     val hiddenEventIds by viewModel.hiddenEventIds.collectAsState()
 
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(value = false) }
     var showQrScannerSheet by remember { mutableStateOf(false) }
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddChoiceSheet by remember { mutableStateOf(false) }
@@ -109,7 +108,7 @@ fun EdtScreen(
     var selectedEventForDetail by remember { mutableStateOf<EdtEvent?>(null) }
 
     val pendingTaskSignatures = remember(tasks) {
-        tasks.filter { !it.isDone }.map { it.eventSignature }.toSet()
+        tasks.asSequence().filter { !it.isDone }.map { it.eventSignature }.toSet()
     }
 
     val tabs = remember { listOf("Agenda", "Semaine") }

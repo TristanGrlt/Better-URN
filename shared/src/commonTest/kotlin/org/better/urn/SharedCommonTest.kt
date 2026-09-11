@@ -13,7 +13,7 @@ class SharedCommonTest {
         val courses = listOf(
             Course(id = 1, fullname = "Mathématiques et Systèmes", shortname = "MATH101"),
             Course(id = 2, fullname = "Réseaux & Télécoms", shortname = "NET201"),
-            Course(id = 3, fullname = "Algorithmique", shortname = "ALG301")
+            Course(id = 3, fullname = "Algorithmique", shortname = "ALG301"),
         ).toImmutableList()
 
         // Search "mathematique" without accents

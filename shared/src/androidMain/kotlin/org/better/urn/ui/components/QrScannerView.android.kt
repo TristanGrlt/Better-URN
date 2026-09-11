@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -54,7 +54,7 @@ import java.util.concurrent.Executors
 actual fun QrScannerView(
     onQrCodeScanned: (QrScanResult) -> Unit,
     isTorchEnabled: Boolean,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -139,7 +139,7 @@ actual fun QrScannerView(
 
     var camera by remember { mutableStateOf<Camera?>(null) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    var lastScannedTime by remember { mutableStateOf(0L) }
+    var lastScannedTime by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(isTorchEnabled, camera) {
         camera?.let { cam ->
@@ -160,21 +160,22 @@ actual fun QrScannerView(
             val previewView = PreviewView(ctx)
             val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
+            cameraProviderFuture.addListener(
+                {
+                    val cameraProvider = cameraProviderFuture.get()
 
-                val preview = Preview.Builder().build().also {
-                    it.surfaceProvider = previewView.surfaceProvider
-                }
+                    val preview = Preview.Builder().build().also {
+                        it.surfaceProvider = previewView.surfaceProvider
+                    }
 
-                val imageAnalysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
+                    val imageAnalysis = ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build()
 
-                imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy: ImageProxy ->
-                    val now = System.currentTimeMillis()
-                    // Throttle scanning to once per 800ms
-                    if (now - lastScannedTime > 800L) {
+                    imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy: ImageProxy ->
+                        val now = System.currentTimeMillis()
+                        // Throttle scanning to once per 800ms
+                        if ((now - lastScannedTime) > 800L) {
                         val planes = imageProxy.planes
                         if (planes.isNotEmpty()) {
                             val firstPlane = planes[0]

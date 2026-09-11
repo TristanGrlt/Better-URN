@@ -6,12 +6,12 @@ package org.better.urn.data
 sealed interface QrScanResult {
     data class Success(
         val url: String,
-        val suggestedName: String
+        val suggestedName: String,
     ) : QrScanResult
 
     data class InvalidFormat(
         val rawText: String,
-        val reason: String
+        val reason: String,
     ) : QrScanResult
 }
 
@@ -79,7 +79,7 @@ object QrCodeParser {
     fun extractSuggestedName(url: String): String {
         return try {
             val queryStart = url.indexOf('?')
-            val queryParams = if (queryStart != -1 && queryStart < url.length - 1) {
+            val queryParams = if ((queryStart != -1) && (queryStart < url.length - 1)) {
                 url.substring(queryStart + 1)
                     .split('&')
                     .mapNotNull { param ->

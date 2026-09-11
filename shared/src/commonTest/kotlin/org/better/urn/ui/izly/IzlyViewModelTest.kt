@@ -196,6 +196,7 @@ class IzlyViewModelTest {
         assertTrue(viewModel.uiState.value.operations.isEmpty())
     }
 
+    @Suppress("RestrictedApi")
     @Test
     fun processDeath_restoresStateFromSavedStateHandle() = runTest {
         val fakeRepo = FakeIzlyRepository()
@@ -203,7 +204,7 @@ class IzlyViewModelTest {
             mapOf(
                 "izly_phone_input" to "0601020304",
                 "izly_is_activation_required" to true,
-                "izly_activation_phone" to "0601020304"
+                "izly_activation_phone" to "0601020304",
             )
         )
         val viewModel = IzlyViewModel(fakeRepo, savedStateHandle)

@@ -28,7 +28,7 @@ import org.better.urn.data.getRelativeDayLabel
 fun EdtDayHeader(
     date: LocalDate,
     today: LocalDate,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val relativeLabel = getRelativeDayLabel(date, today)
 

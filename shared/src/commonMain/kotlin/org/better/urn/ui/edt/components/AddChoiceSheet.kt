@@ -62,7 +62,7 @@ fun AddChoiceSheet(
     onAddCalendarUrlClick: () -> Unit,
     onScanQrCodeClick: (() -> Unit)? = null,
     onAddManualCourseClick: () -> Unit,
-    onOpenAdeTutorial: () -> Unit
+    onOpenAdeTutorial: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var mode by remember { mutableStateOf(AddChoiceMode.MAIN_MENU) }

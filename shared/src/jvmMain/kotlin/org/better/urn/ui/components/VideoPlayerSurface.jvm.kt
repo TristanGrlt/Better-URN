@@ -51,11 +51,11 @@ actual fun VideoPlayerSurface(
     onBufferingStateChanged: (isBuffering: Boolean) -> Unit,
     onPlaybackEnded: () -> Unit,
     onError: (message: String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var jfxPanelRef by remember { mutableStateOf<JFXPanel?>(null) }
     var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
-    var isInitialized by remember { mutableStateOf(false) }
+    var isInitialized by remember { mutableStateOf(value = false) }
     var hasError by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
@@ -134,7 +134,7 @@ actual fun VideoPlayerSurface(
 
     LaunchedEffect(isPlaying, isInitialized) {
         val player = mediaPlayerRef
-        if (player != null && isInitialized) {
+        if ((player != null) && isInitialized) {
             Platform.runLater {
                 try {
                     if (isPlaying) {
@@ -175,7 +175,7 @@ actual fun VideoPlayerSurface(
     LaunchedEffect(seekToMs, isInitialized) {
         val target = seekToMs
         val player = mediaPlayerRef
-        if (target != null && player != null && isInitialized) {
+        if (target != null && (player != null) && isInitialized) {
             Platform.runLater {
                 try {
                     player.seek(Duration.millis(target.toDouble()))

@@ -26,7 +26,7 @@ actual object SecureStorage {
             val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
             val spec = KeyGenParameterSpec.Builder(
                 KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
             )
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -63,10 +63,7 @@ actual object SecureStorage {
     }
 
     actual fun getSecureString(key: String): String? {
-        val prefs = getPrefs()
-        if (prefs == null) {
-            return fallbackStore[key]
-        }
+        val prefs = getPrefs() ?: return fallbackStore[key]
         val raw = prefs.getString(key, null) ?: return fallbackStore[key]
         return try {
             val parts = raw.split(":")

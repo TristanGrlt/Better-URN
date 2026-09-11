@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LicenseBottomSheet(
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true

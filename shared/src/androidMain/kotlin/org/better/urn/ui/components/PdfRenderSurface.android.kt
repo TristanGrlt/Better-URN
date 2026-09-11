@@ -38,7 +38,7 @@ actual fun PdfRenderSurface(
     state: PdfViewerState,
     onLoadingStateChanged: (Boolean) -> Unit,
     onError: (String?) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var panX by remember { mutableFloatStateOf(0f) }
     var panY by remember { mutableFloatStateOf(0f) }
@@ -61,7 +61,7 @@ actual fun PdfRenderSurface(
 
     // Scroll list when state.currentPage changes programmatically (prevents scroll feedback loop)
     LaunchedEffect(state.currentPage) {
-        if (state.pageCount > 0 && !lazyListState.isScrollInProgress) {
+        if ((state.pageCount > 0) && !lazyListState.isScrollInProgress) {
             val targetIndex = (state.currentPage - 1).coerceIn(0, state.pageCount - 1)
             if (lazyListState.firstVisibleItemIndex != targetIndex) {
                 lazyListState.animateScrollToItem(targetIndex)
@@ -196,14 +196,14 @@ actual fun PdfRenderSurface(
                         var bitmap by remember(pageIndex, state.fitMode) { mutableStateOf<ImageBitmap?>(null) }
 
                         LaunchedEffect(pageIndex, state.fitMode, containerWidthPx) {
-                            val cached = lruCache.get(pageIndex)
+                            val cached = lruCache[pageIndex]
                             if (cached != null && !cached.isRecycled) {
                                 bitmap = cached.asImageBitmap()
                             } else {
                                 val rendered = withContext(Dispatchers.Default) {
                                     rendererMutex.withLock {
                                         // Double check cache inside lock
-                                        val existing = lruCache.get(pageIndex)
+                                        val existing = lruCache[pageIndex]
                                         if (existing != null && !existing.isRecycled) {
                                             return@withLock existing.asImageBitmap()
                                         }

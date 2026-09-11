@@ -168,7 +168,7 @@ class UserPreferences {
     
     var cachedUser: MoodleUser?
         get() = CacheStorage.getString("cached_user")?.let { 
-            try { json.decodeFromString(it) } catch (e: Exception) { null } 
+            try { json.decodeFromString(it) } catch (_: Exception) { null } 
         }
         set(value) {
             if (value != null) {
@@ -180,7 +180,7 @@ class UserPreferences {
 
     var cachedCourses: List<Course>
         get() = CacheStorage.getString("cached_courses")?.let { 
-            try { json.decodeFromString(it) } catch (e: Exception) { emptyList() } 
+            try { json.decodeFromString(it) } catch (_: Exception) { emptyList() } 
         } ?: emptyList()
         set(value) {
             if (value.isEmpty()) {
@@ -250,7 +250,7 @@ class UserPreferences {
     }
 
     var isHiddenSectionExpanded: Boolean
-        get() = settings.getBoolean("is_hidden_section_expanded", false)
+        get() = settings.getBoolean("is_hidden_section_expanded", defaultValue = false)
         set(value) = settings.putBoolean("is_hidden_section_expanded", value)
 
     companion object {

@@ -28,13 +28,10 @@ class MainActivity : ComponentActivity() {
         deepLinkState = intent?.dataString
 
         setContent {
-            App(
-                deepLink = deepLinkState,
-                onDeepLinkHandled = {
-                    deepLinkState = null
-                    intent?.data = null
-                }
-            )
+            App(deepLink = deepLinkState) {
+                deepLinkState = null
+                intent?.data = null
+            }
         }
     }
 

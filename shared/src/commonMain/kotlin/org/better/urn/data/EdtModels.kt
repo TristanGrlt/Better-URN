@@ -9,7 +9,7 @@ data class Timetable(
     val id: String,
     val name: String,
     val url: String,
-    val isVisible: Boolean = true
+    val isVisible: Boolean = true,
 )
 
 @Immutable
@@ -18,7 +18,7 @@ data class EdtTask(
     val id: String = generateTaskId(),
     val eventSignature: String,
     val description: String,
-    val isDone: Boolean = false
+    val isDone: Boolean = false,
 )
 
 private fun generateTaskId(): String = "task_${kotlin.time.Clock.System.now().toEpochMilliseconds()}_${(100000..999999).random()}"

@@ -237,7 +237,7 @@ class EdtUtilsTest {
             numDays = 5,
             timeZone = tz,
             startHour = 8,
-            endHour = 20
+            endHour = 20,
         )
 
         // eOut is outside the 5-day week starting on Monday -> should not be included

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -55,7 +54,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 actual fun QrScannerView(
     onQrCodeScanned: (QrScanResult) -> Unit,
     isTorchEnabled: Boolean,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var imagePathInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -109,7 +108,7 @@ actual fun QrScannerView(
                 }
 
                 val returnVal = chooser.showOpenDialog(null)
-                if (returnVal == JFileChooser.APPROVE_OPTION && chooser.selectedFile != null) {
+                if ((returnVal == JFileChooser.APPROVE_OPTION) && (chooser.selectedFile != null)) {
                     val file = chooser.selectedFile
                     processImageFile(file)
                 }

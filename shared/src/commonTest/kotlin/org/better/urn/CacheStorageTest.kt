@@ -44,7 +44,7 @@ class CacheStorageTest {
             Course(
                 id = id,
                 fullname = "Cours Très Long Nom #$id - " + "Info ".repeat(50),
-                shortname = "CS$id - " + "Short ".repeat(20)
+                shortname = "CS$id - " + "Short ".repeat(20),
             )
         }
 
@@ -62,7 +62,7 @@ class CacheStorageTest {
                 summary = "Résumé de section " + "Texte ".repeat(100),
                 modules = (1..10).map { modId ->
                     CourseModule(
-                        id = secId * 100 + modId,
+                        id = (secId * 100) + modId,
                         name = "Module #$modId " + "Description ".repeat(30),
                         modname = "resource",
                         url = "https://universitice.univ-rouen.fr/mod/resource/view.php?id=${secId * 100 + modId}"

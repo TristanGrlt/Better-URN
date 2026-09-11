@@ -44,7 +44,7 @@ class EdtViewModelTest {
             startMs = 1700000000000L,
             endMs = 1700003600000L,
             location = "Amphi A",
-            colorHex = "#FF0000"
+            colorHex = "#FF0000",
         )
         assertFalse(event.isManual)
     }
@@ -134,7 +134,7 @@ class EdtViewModelTest {
         // Create new VM with fakeRepo2 that provides freshEvents after a small suspension delay
         val fakeRepo2 = object : EdtRepository() {
             override suspend fun fetchAndParseIcs(url: String, isDarkTheme: Boolean, timetableId: String): List<EdtEvent> {
-                kotlinx.coroutines.delay(100L)
+                kotlinx.coroutines.delay(kotlin.time.Duration.parse("100ms"))
                 return freshEvents
             }
         }

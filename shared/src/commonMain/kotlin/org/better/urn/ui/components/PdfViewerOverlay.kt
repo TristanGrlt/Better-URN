@@ -46,7 +46,7 @@ fun PdfViewerOverlay(
     file: ViewableFile,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    onDownloadFile: ((ViewableFile) -> Unit)? = null
+    onDownloadFile: ((ViewableFile) -> Unit)? = null,
 ) {
     BackHandler(enabled = true) {
         onClose()
@@ -55,7 +55,7 @@ fun PdfViewerOverlay(
     val uriHandler = LocalUriHandler.current
     val state = rememberPdfViewerState()
 
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(value = true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isJumpPageDialogOpen by remember { mutableStateOf(false) }
 
@@ -144,7 +144,7 @@ fun PdfViewerOverlay(
         )
 
         // Loading Overlay
-        if (isLoading && errorMessage == null) {
+        if (isLoading && (errorMessage == null)) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
@@ -311,7 +311,7 @@ fun PdfViewerOverlay(
                     contentPadding = PaddingValues(horizontal = 6.dp)
                 ) {
                     Text(
-                        text = if (state.pageCount > 0) "${state.currentPage} / ${state.pageCount}" else "${state.currentPage}",
+                        text = if (state.pageCount > 0) "${state.currentPage} / ${state.pageCount}" else state.currentPage.toString(),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -492,8 +492,7 @@ fun PdfViewerOverlay(
                             ),
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    val pageNum = inputPageText.toIntOrNull()
-                                    if (pageNum != null) {
+                                    inputPageText.toIntOrNull()?.let { pageNum ->
                                         state.goToPage(pageNum)
                                     }
                                     isJumpPageDialogOpen = false

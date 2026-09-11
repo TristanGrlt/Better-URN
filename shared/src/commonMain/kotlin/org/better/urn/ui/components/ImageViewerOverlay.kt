@@ -44,16 +44,16 @@ fun ImageViewerOverlay(
     file: ViewableFile,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    onDownloadFile: ((ViewableFile) -> Unit)? = null
+    onDownloadFile: ((ViewableFile) -> Unit)? = null,
 ) {
     BackHandler(enabled = true) {
         onClose()
     }
 
     val uriHandler = LocalUriHandler.current
-    var zoom by remember { mutableStateOf(1f) }
+    var zoom by remember { mutableFloatStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
-    var rotationAngle by remember { mutableStateOf(0f) }
+    var rotationAngle by remember { mutableFloatStateOf(0f) }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -94,7 +94,7 @@ fun ImageViewerOverlay(
                             true
                         }
                         Key.L -> {
-                            rotationAngle = (rotationAngle - 90f + 360f) % 360f
+                            rotationAngle = ((rotationAngle - 90f) + 360f) % 360f
                             true
                         }
                         Key.R -> {

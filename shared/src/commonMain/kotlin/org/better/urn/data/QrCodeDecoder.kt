@@ -16,7 +16,7 @@ object QrCodeDecoder {
         setHints(
             mapOf(
                 DecodeHintType.POSSIBLE_FORMATS to listOf(com.google.zxing.BarcodeFormat.QR_CODE),
-                DecodeHintType.TRY_HARDER to true
+                DecodeHintType.TRY_HARDER to true,
             )
         )
     }
@@ -54,7 +54,7 @@ object QrCodeDecoder {
                     for (y in 0 until height) {
                         val rowOffset = y * rowStride
                         for (x in 0 until width) {
-                            rotated[x * height + (height - 1 - y)] = yPlane[rowOffset + x]
+                            rotated[(x * height) + (height - 1 - y)] = yPlane[rowOffset + x]
                         }
                     }
                     Quintuple(rotated, height, width, height, width)
@@ -75,7 +75,7 @@ object QrCodeDecoder {
                     for (y in 0 until height) {
                         val rowOffset = y * rowStride
                         for (x in 0 until width) {
-                            rotated[(width - 1 - x) * height + y] = yPlane[rowOffset + x]
+                            rotated[((width - 1 - x) * height) + y] = yPlane[rowOffset + x]
                         }
                     }
                     Quintuple(rotated, height, width, height, width)

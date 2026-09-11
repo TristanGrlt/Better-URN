@@ -16,7 +16,7 @@ object MoodleAuthValidator {
 
         // Passport validation (anti-CSRF / replay attack prevention)
         if (!payload.passport.isNullOrBlank()) {
-            if (storedPassport.isNullOrBlank() || payload.passport != storedPassport) {
+            if (storedPassport.isNullOrBlank() || (payload.passport != storedPassport)) {
                 return false
             }
         }

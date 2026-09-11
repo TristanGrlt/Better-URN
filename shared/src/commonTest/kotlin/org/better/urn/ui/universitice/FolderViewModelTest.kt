@@ -22,7 +22,7 @@ class FolderViewModelTest {
                     filename = "Consignes.pdf",
                     filepath = "/",
                     fileurl = "https://example.com/consignes.pdf",
-                    mimetype = "application/pdf"
+                    mimetype = "application/pdf",
                 ),
                 ModuleContent(
                     filename = "Sujet_1.pdf",
@@ -44,8 +44,9 @@ class FolderViewModelTest {
         viewModel.openFolder(folder)
 
         val state = viewModel.uiState.value
-        assertNotNull(state.selectedFolderModule)
-        assertEquals(50, state.selectedFolderModule?.id)
+        val selected = state.selectedFolderModule
+        assertNotNull(selected)
+        assertEquals(50, selected.id)
         assertEquals("/", state.currentFolderPath)
         assertNotNull(state.folderTreeContent)
         assertEquals(1, state.folderTreeContent?.files?.size)

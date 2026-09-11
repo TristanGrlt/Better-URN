@@ -10,7 +10,7 @@ import io.ktor.http.HttpHeaders
 const val DEFAULT_ADE_URL = "https://schedule.univ-rouen.fr/direct/myade/cal?projectId=1&resources=1234&caller=moodle"
 
 open class EdtRepository(
-    private val client: HttpClient = defaultClient
+    private val client: HttpClient = defaultClient,
 ) {
     companion object {
         private val defaultClient by lazy {
@@ -21,7 +21,7 @@ open class EdtRepository(
     open suspend fun fetchAndParseIcs(
         url: String = DEFAULT_ADE_URL,
         isDarkTheme: Boolean = false,
-        timetableId: String = "default"
+        timetableId: String = "default",
     ): List<EdtEvent> {
         val targetUrl = normalizeUrl(url)
         return try {

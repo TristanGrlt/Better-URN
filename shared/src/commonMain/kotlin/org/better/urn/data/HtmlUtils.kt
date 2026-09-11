@@ -53,7 +53,7 @@ private val NAMED_ENTITIES: Map<String, String> = mapOf(
     "ccedil" to "ç", "Ccedil" to "Ç",
     "ntilde" to "ñ", "Ntilde" to "Ñ",
     "aelig" to "æ", "AElig" to "Æ",
-    "oelig" to "œ", "OElig" to "Œ"
+    "oelig" to "œ", "OElig" to "Œ",
 )
 
 /**
@@ -92,7 +92,7 @@ fun String.decodeHtmlEntities(): String {
             }
         }
         iterations++
-    } while (current != previous && current.contains('&') && iterations < 3)
+    } while (current != previous && current.contains('&') && (iterations < 3))
     return current.replace('\u00A0', ' ')
 }
 
