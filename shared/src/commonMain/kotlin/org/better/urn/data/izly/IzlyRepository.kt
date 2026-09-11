@@ -27,6 +27,8 @@ interface IzlyRepository {
     suspend fun getBalance(): Result<Float>
     suspend fun getHistory(): Result<List<IzlyOperation>>
     suspend fun logout()
+    fun getSavedPhone(): String?
+    fun savePhone(phone: String)
 }
 
 fun IzlyRepository(httpClient: HttpClient = HttpClient(CIO)): IzlyRepository = RealIzlyRepository(httpClient)
@@ -136,6 +138,7 @@ class RealIzlyRepository(
                     append("smoneyClientType", CLIENT_TYPE)
                     append("SOAPAction", "Service/Logon")
                     append("User-Agent", USER_AGENT)
+                    append(HttpHeaders.Connection, "close")
                 }
                 contentType(ContentType.parse("text/xml;charset=utf-8"))
                 setBody(soapBody)
@@ -147,7 +150,16 @@ class RealIzlyRepository(
                 throw IllegalArgumentException("Authentification refusée.")
             }
 
+            currentUserPhone = phone
             true
+        }
+    }
+
+    override fun getSavedPhone(): String? = currentUserPhone
+
+    override fun savePhone(phone: String) {
+        if (phone.isNotBlank()) {
+            currentUserPhone = phone
         }
     }
 
@@ -161,7 +173,11 @@ class RealIzlyRepository(
                 val redirectedUrl = HttpClient {
                     followRedirects = false
                 }.use { client ->
-                    client.get(cleanLink).headers[HttpHeaders.Location]
+                    client.get(cleanLink) {
+                        headers {
+                            append(HttpHeaders.UserAgent, USER_AGENT)
+                        }
+                    }.headers[HttpHeaders.Location]
                 }
                 redirectedUrl ?: cleanLink
             } else {
@@ -202,6 +218,7 @@ class RealIzlyRepository(
                     append("smoneyClientType", "PART")
                     append("SOAPAction", "Service/Logon")
                     append("User-Agent", USER_AGENT)
+                    append(HttpHeaders.Connection, "close")
                 }
                 contentType(ContentType.parse("text/xml;charset=utf-8"))
                 setBody(soapBody)

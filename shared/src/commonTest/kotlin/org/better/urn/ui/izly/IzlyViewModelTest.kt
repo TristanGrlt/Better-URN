@@ -30,12 +30,21 @@ private class FakeIzlyRepository(
         )
     )
 ) : IzlyRepository {
+    var internalSavedPhone: String? = null
+
+    override fun getSavedPhone(): String? = internalSavedPhone
+
+    override fun savePhone(phone: String) {
+        internalSavedPhone = phone
+    }
+
     override suspend fun hasValidSession(): Boolean = isSessionValid
 
     override suspend fun login(phone: String, pin: String): Result<Boolean> {
         return if (shouldFailLogin) {
             Result.failure(IllegalArgumentException("Identifiants invalides"))
         } else {
+            internalSavedPhone = phone
             Result.success(true)
         }
     }
@@ -63,6 +72,7 @@ private class FakeIzlyRepository(
 
     override suspend fun logout() {
         isSessionValid = false
+        internalSavedPhone = null
     }
 }
 
@@ -184,5 +194,22 @@ class IzlyViewModelTest {
         assertEquals("", viewModel.uiState.value.pinInput)
         assertEquals("", viewModel.uiState.value.activationLinkInput)
         assertTrue(viewModel.uiState.value.operations.isEmpty())
+    }
+
+    @Test
+    fun processDeath_restoresStateFromSavedStateHandle() = runTest {
+        val fakeRepo = FakeIzlyRepository()
+        val savedStateHandle = androidx.lifecycle.SavedStateHandle(
+            mapOf(
+                "izly_phone_input" to "0601020304",
+                "izly_is_activation_required" to true,
+                "izly_activation_phone" to "0601020304"
+            )
+        )
+        val viewModel = IzlyViewModel(fakeRepo, savedStateHandle)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(IzlyAuthState.ActivationRequired("0601020304"), viewModel.uiState.value.authState)
+        assertEquals("0601020304", viewModel.uiState.value.phoneInput)
     }
 }

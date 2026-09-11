@@ -106,15 +106,21 @@ fun IzlyScreen(
             )
         }
 
+        val activationPhone = (uiState.authState as? IzlyAuthState.ActivationRequired)?.phone
+            ?.takeIf { it.isNotBlank() }
+            ?: uiState.phoneInput
+
+        val isActivationView = uiState.authState is IzlyAuthState.ActivationRequired ||
+                (uiState.authState is IzlyAuthState.Loading && activationPhone.isNotBlank())
+
         AnimatedVisibility(
-            visible = uiState.authState is IzlyAuthState.ActivationRequired,
+            visible = isActivationView,
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            val phone = (uiState.authState as? IzlyAuthState.ActivationRequired)?.phone ?: uiState.phoneInput
             IzlyActivationContent(
                 uiState = uiState,
-                phone = phone,
+                phone = activationPhone,
                 onActivationLinkChanged = { viewModel.onActivationLinkChanged(it) },
                 onSubmitActivationLink = { viewModel.submitActivationLink(it) },
                 onBackToLogin = { viewModel.logout() },
@@ -122,7 +128,7 @@ fun IzlyScreen(
         }
 
         AnimatedVisibility(
-            visible = (uiState.authState !is IzlyAuthState.LoggedIn) && (uiState.authState !is IzlyAuthState.ActivationRequired),
+            visible = (uiState.authState !is IzlyAuthState.LoggedIn) && !isActivationView,
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
