@@ -32,7 +32,6 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Phone
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Sms
@@ -90,6 +89,11 @@ fun IzlyScreen(
     Column(modifier = modifier.fillMaxSize()) {
         BetterUrnTopBar(
             title = "Izly",
+            onRefresh = if (uiState.authState is IzlyAuthState.LoggedIn) {
+                { viewModel.fetchHistory() }
+            } else null,
+            isRefreshing = uiState.isRefreshingHistory,
+            refreshContentDescription = "Rafraîchir le solde et l'historique",
             onProfileClick = onProfileClick,
         )
 
@@ -711,9 +715,7 @@ private fun IzlyLoggedInContent(
         item {
             Spacer(modifier = Modifier.height(8.dp))
             IzlyBalanceCard(
-                balance = uiState.totalBalance,
-                isRefreshing = uiState.isRefreshingHistory,
-                onRefresh = onRefresh
+                balance = uiState.totalBalance
             )
         }
 
@@ -798,8 +800,6 @@ private fun IzlyLoggedInContent(
 @Composable
 private fun IzlyBalanceCard(
     balance: Float,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -814,36 +814,11 @@ private fun IzlyBalanceCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Solde disponible",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                )
-
-                IconButton(
-                    onClick = onRefresh,
-                    enabled = !isRefreshing
-                ) {
-                    if (isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Rounded.Refresh,
-                            contentDescription = "Rafraîchir l'historique",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
+            Text(
+                text = "Solde disponible",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
 
             Spacer(modifier = Modifier.height(4.dp))
 
