@@ -3,14 +3,18 @@ package org.better.urn.ui.izly
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,16 +26,20 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AddCard
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Sms
@@ -39,7 +47,7 @@ import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -56,9 +64,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import org.better.urn.getPlatform
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -68,9 +76,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.better.urn.data.izly.IzlyAuthState
 import org.better.urn.data.izly.IzlyOperation
+import org.better.urn.getPlatform
 import org.better.urn.ui.components.BetterUrnTopBar
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -699,6 +709,7 @@ private fun IzlyActivationContent(
 
 /**
  * Main dashboard displayed once the user is successfully authenticated.
+ * Supports adaptive 2-column layout on Desktop/Tablet and single-column on Mobile.
  */
 @Composable
 private fun IzlyLoggedInContent(
@@ -706,128 +717,366 @@ private fun IzlyLoggedInContent(
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
     ) {
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            IzlyBalanceCard(
-                balance = uiState.totalBalance
-            )
-        }
+        val isWideScreen = maxWidth >= 720.dp
 
-        if (uiState.errorMessage != null) {
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(16.dp)
+        if (isWideScreen) {
+            // Responsive Desktop / Tablet Layout: 2 Columns
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Left Column: Payment Card & Account Info
+                Column(
+                    modifier = Modifier.width(360.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ErrorOutline,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                    IzlyPaymentCard(
+                        balance = uiState.totalBalance,
+                    )
+
+                    if (uiState.errorMessage != null) {
+                        IzlyErrorCard(
+                            errorMessage = uiState.errorMessage,
+                            onRefresh = onRefresh
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Erreur de chargement",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = uiState.errorMessage,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = onRefresh) {
-                            Text("Réessayer", color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+
+                    IzlyQuickInfoCard()
+                }
+
+                // Right Column: Operations List
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    IzlyOperationsHeader(operationCount = uiState.operations.size)
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp)
+                    ) {
+                        items(
+                            items = uiState.operations,
+                            key = { it.id }
+                        ) { operation ->
+                            IzlyOperationItem(operation = operation)
                         }
                     }
                 }
             }
-        }
-
-        item {
-            Row(
+        } else {
+            // Mobile Layout: Single Column
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp)
             ) {
-                Text(
-                    text = "Dernières opérations",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "${uiState.operations.size} opérations",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                item {
+                    IzlyPaymentCard(
+                        balance = uiState.totalBalance,
+                    )
+                }
+
+                if (uiState.errorMessage != null) {
+                    item {
+                        IzlyErrorCard(
+                            errorMessage = uiState.errorMessage,
+                            onRefresh = onRefresh
+                        )
+                    }
+                }
+
+                item {
+                    IzlyOperationsHeader(operationCount = uiState.operations.size)
+                }
+
+                items(
+                    items = uiState.operations,
+                    key = { it.id }
+                ) { operation ->
+                    IzlyOperationItem(operation = operation)
+                }
             }
-        }
-
-        items(
-            items = uiState.operations,
-            key = { it.id }
-        ) { operation ->
-            IzlyOperationItem(operation = operation)
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 /**
- * Balance summary header card displaying total account balance and actions.
+ * Payment card composable displaying balance and quick action buttons (QR Pay, Top-Up).
  */
 @Composable
-private fun IzlyBalanceCard(
+private fun IzlyPaymentCard(
     balance: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPayQrClick: () -> Unit = {},
+    onRechargeClick: () -> Unit = {}
 ) {
-    Card(
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.tertiary
+        )
+    )
+
+    ElevatedCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 210.dp),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(brush = gradientBrush)
+                .padding(20.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Header row: PASS Izly badge & NFC icon
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.25f),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AccountBalanceWallet,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "PASS Izly",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Rounded.Nfc,
+                        contentDescription = "Paiement sans contact",
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Middle: Available balance
+                Column {
+                    Text(
+                        text = "SOLDE DISPONIBLE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.75f),
+                        letterSpacing = 1.2.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = balance.formatMonetary(),
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Action buttons: QR Payment and Recharge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onPayQrClick,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(alpha = 0.22f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.QrCodeScanner,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Payer (QR)",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
+
+                    Button(
+                        onClick = onRechargeClick,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AddCard,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Recharger",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Informational card displayed alongside the payment card on desktop/wide views.
+ */
+@Composable
+private fun IzlyQuickInfoCard(modifier: Modifier = Modifier) {
+    ElevatedCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Services CROUS & Izly",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             Text(
-                text = "Solde disponible",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                text = "Paiement rapide dans tous les Restaurants Universitaires (RU) et cafétérias CROUS.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(4.dp))
+/**
+ * Header for transactions section with count indicator.
+ */
+@Composable
+private fun IzlyOperationsHeader(
+    operationCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Dernières opérations",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "$operationCount opérations",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-            Text(
-                text = balance.formatMonetary(),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+/**
+ * Error card banner displayed when network/history requests fail.
+ */
+@Composable
+private fun IzlyErrorCard(
+    errorMessage: String,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer
             )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Erreur de chargement",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(onClick = onRefresh) {
+                Text("Réessayer", color = MaterialTheme.colorScheme.onErrorContainer)
+            }
         }
     }
 }
